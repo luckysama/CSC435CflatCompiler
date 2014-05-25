@@ -17,14 +17,16 @@
 %nonassoc   '>' GTEQ '<' LTEQ
 %left       '+' '-'
 %left       '*' '/' '%'
-%left       UMINUS
+//%left       UMINUS
 
 // All other named tokens (i.e. the single character tokens are omitted)
 // The order in which they are listed here does not matter.
-%token      Kwd_break Kwd_class Kwd_const Kwd_else Kwd_if Kwd_int
-%token      Kwd_new Kwd_out Kwd_public Kwd_return Kwd_static Kwd_string
-%token      Kwd_using Kwd_void Kwd_while
-%token      PLUSPLUS MINUSMINUS Ident Number StringConst
+%token 		Kwd_while Kwd_if Kwd_else Kwd_break Kwd_return //branching keywords
+%token		Kwd_int Kwd_char Kwd_string Kwd_void Kwd_null //data type keywords
+%token		Kwd_public Kwd_static Kwd_const	Kwd_virtual Kwd_override Kwd_class	 //class construct keywords
+%token 		Kwd_using 									 //preprocessor
+%token		
+
 
 %%
 
