@@ -13,7 +13,7 @@
 %right      '='
 %left       OROR
 %left       ANDAND
-%nonassoc   EQEQ NOTEQ
+%nonassoc   EQEQ NOTEQ PLUSPLUS MINUSMINUS
 %nonassoc   '>' GTEQ '<' LTEQ
 %left       '+' '-'
 %left       '*' '/' '%'
@@ -22,10 +22,11 @@
 // All other named tokens (i.e. the single character tokens are omitted)
 // The order in which they are listed here does not matter.
 %token 		Kwd_while Kwd_if Kwd_else Kwd_break Kwd_return //branching keywords
-%token		Kwd_int Kwd_char Kwd_string Kwd_void Kwd_null //data type keywords
+%token		Kwd_int Kwd_char Kwd_string Kwd_void Kwd_null Kwd_new//data type keywords
 %token		Kwd_public Kwd_static Kwd_const	Kwd_virtual Kwd_override Kwd_class	 //class construct keywords
 %token 		Kwd_using 									 //preprocessor	
-
+//non-keywords lexer tokens
+%token 		Ident Number StringConst
 
 %%
 
