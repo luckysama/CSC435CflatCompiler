@@ -17,15 +17,14 @@
 %nonassoc   '>' GTEQ '<' LTEQ
 %left       '+' '-'
 %left       '*' '/' '%'
-//%left       UMINUS
+%left       UMINUS
 
 // All other named tokens (i.e. the single character tokens are omitted)
 // The order in which they are listed here does not matter.
 %token 		Kwd_while Kwd_if Kwd_else Kwd_break Kwd_return //branching keywords
 %token		Kwd_int Kwd_char Kwd_string Kwd_void Kwd_null //data type keywords
 %token		Kwd_public Kwd_static Kwd_const	Kwd_virtual Kwd_override Kwd_class	 //class construct keywords
-%token 		Kwd_using 									 //preprocessor
-%token		
+%token 		Kwd_using 									 //preprocessor	
 
 
 %%
@@ -47,12 +46,19 @@ ClassList:	    ClassList ClassDecl
 		|		ClassDecl
 		;
 
-ClassDecl:		Kwd_class Ident '{'  DeclList  '}'
+ClassDecl:		Kwd_class Ident ClassInherit ClassBody
+		;
+
+ClassInherit:	':' Ident
+		|		/* empty */
+		;
+		
+ClassBody: 		'{' DeclList '}'
 		;
 
 DeclList:       DeclList ConstDecl
         |       DeclList MethodDecl
-        |       /* empty */
+        |       DeclList FieldDecl
         ;
 
 ConstDecl:      Kwd_public Kwd_const Type Ident '=' InitVal ';'
@@ -62,10 +68,6 @@ InitVal:        Number
         |       StringConst
         ;
 
-FieldDeclList:  FieldDeclList FieldDecl
-        |       /* empty */
-        ;
-
 FieldDecl:      Kwd_public Type IdentList ';'
         ;
 
@@ -73,8 +75,19 @@ IdentList:      IdentList ',' Ident
         |       Ident
         ;
 
-MethodDecl:     Kwd_public Kwd_static Kwd_void Ident '(' OptFormals ')' Block
+MethodDecl:     Kwd_public MethodModifiers MethodReturnType Ident '(' OptFormals ')' Block
         ;
+
+MethodModifiers: MethodModifiers Kwd_static
+		|	MethodModifiers Kwd_virtual
+		| 	MethodModifiers Kwd_override
+		|	/* empty */
+		;
+
+MethodReturnType: Kwd_void
+		|	Ident
+		;
+		
 
 OptFormals:     /* empty */
         |       FormalPars
@@ -94,6 +107,7 @@ Type:           TypeName
 TypeName:       Ident
         |       Kwd_int
         |       Kwd_string
+		|		Kwd_char
         ;
 
 Statement:      Designator '=' Expr ';'
@@ -124,7 +138,7 @@ OptElsePart:    Kwd_else Statement
 Block:          '{' DeclsAndStmts '}'
         ;
 
-LocalDecl:      Ident IdentList ';'
+LocalDecl:      Ident IdentList ';' //local decl does not have "public"
         |       Ident '[' ']' IdentList ';'
         ;
 
@@ -151,10 +165,11 @@ Expr:           Expr OROR Expr
         |       Designator '(' OptActuals ')'
         |       Number
         |       StringConst
-        |       StringConst '.' Ident // Ident must be "Length"
+        |       StringConst '.' '[' Ident ']'// Ident must be "Length"
         |       Kwd_new Ident '(' ')'
         |       Kwd_new Ident '[' Expr ']'
         |       '(' Expr ')'
+		|		Kwd_null
         ;
 
 Designator:     Ident Qualifiers
