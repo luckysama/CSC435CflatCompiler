@@ -21,7 +21,7 @@
 
 // All other named tokens (i.e. the single character tokens are omitted)
 // The order in which they are listed here does not matter.
-%token 		Kwd_while Kwd_if Kwd_else Kwd_break Kwd_return //branching keywords
+%token 		Kwd_while Kwd_if Kwd_then Kwd_else Kwd_break Kwd_return //branching keywords
 %token		Kwd_int Kwd_char Kwd_string Kwd_void Kwd_null Kwd_new//data type keywords
 %token		Kwd_public Kwd_static Kwd_const	Kwd_virtual Kwd_override Kwd_class	 //class construct keywords
 %token 		Kwd_using 									 //preprocessor	
@@ -60,6 +60,7 @@ ClassBody: 		'{' DeclList '}'
 DeclList:       DeclList ConstDecl
         |       DeclList MethodDecl
         |       DeclList FieldDecl
+		| 		/* empty */
         ;
 
 ConstDecl:      Kwd_public Kwd_const Type Ident '=' InitVal ';'
@@ -110,12 +111,15 @@ TypeName:       Ident
         |       Kwd_string
 		|		Kwd_char
         ;
+		
+Statement: MatchedStatement
+		| UnmatchedIfElse;
 
-Statement:      Designator '=' Expr ';'
+MatchedStatement: Kwd_if '(' Expr ')' Kwd_then MatchedStatement Kwd_else MatchedStatement    
+		|		Designator '=' Expr ';'
         |       Designator '(' OptActuals ')' ';'
         |       Designator PLUSPLUS ';'
         |       Designator MINUSMINUS ';'
-        |       Kwd_if '(' Expr ')' Statement OptElsePart
         |       Kwd_while '(' Expr ')' Statement
         |       Kwd_break ';'
         |       Kwd_return ';'
@@ -123,6 +127,10 @@ Statement:      Designator '=' Expr ';'
         |       Block
         |       ';'
         ;
+		
+UnmatchedIfElse: Kwd_if '(' Expr ')' Kwd_then Statement
+		| Kwd_if '(' Expr ')' Kwd_then MatchedStatement Kwd_else UnmatchedIfElse
+		;
 
 OptActuals:     /* empty */
         |       ActPars
@@ -130,10 +138,6 @@ OptActuals:     /* empty */
 
 ActPars:        ActPars ',' Expr
         |       Expr
-        ;
-
-OptElsePart:    Kwd_else Statement
-        |       /* empty */
         ;
 
 Block:          '{' DeclsAndStmts '}'
