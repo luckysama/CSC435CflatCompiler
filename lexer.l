@@ -1,4 +1,4 @@
-%namespace LexScanner
+%namespace FrontEnd
 %tokentype Tokens
 
 %{
@@ -16,10 +16,27 @@
 
 %}
 
+%x comment
 space [ \t]
 opchar [+\-*/=<>] // must escape - as it signifies a range
 underscore "_"
 %%
+
+"/*"		{
+			int comment_caller = INITIAL;
+			int nested = 0;
+			BEGIN(comment);
+		}		
+<comment>[^*\n]*	{}
+<comment>"*"+[^*/\n]*	{}
+<comment>"/"+"*"	 ++nested;
+<comment>"*"+"/"	{	if(nested == 0) {
+					BEGIN(comment_caller);
+				} else {
+					--nested;
+				}
+			}	
+
 {space}          {}
 "using"		 {last_token_text=yytext;return (int)Tokens.Kwd_using;}
 "void"		 {last_token_text=yytext;return (int)Tokens.Kwd_void;}
@@ -33,14 +50,22 @@ underscore "_"
 "if"		 {last_token_text=yytext;return (int)Tokens.Kwd_if;}
 "new"		 {last_token_text=yytext;return (int)Tokens.Kwd_new;}
 "out"		 {last_token_text=yytext;return (int)Tokens.Kwd_out;}
+"override"	 {last_token_text=yytext;return (int)Tokens.Kwd_override;}
+"virtual"	 {last_token_text=yytext;return (int)Tokens.Kwd_virtual;}
 "while"		 {last_token_text=yytext;return (int)Tokens.Kwd_while;}
+"null"		 {last_token_text=yytext;return (int)Tokens.Kwd_null;}
 "=="		 {last_token_text=yytext;return (int)Tokens.EQEQ;}
 "!="		 {last_token_text=yytext;return (int)Tokens.NOTEQ;}
 ">="		 {last_token_text=yytext;return (int)Tokens.GTEQ;}
 0|[1-9][0-9]*    {last_token_text=yytext;return (int)Tokens.Number;}
 "++"		 {last_token_text=yytext;return (int)Tokens.PLUSPLUS;}
-0x[1-9a-fA-F]*		 {last_token_text=yytext;return (int)Tokens.HEXNUM;}
+"&&"		 {last_token_text=yytext;return (int)Tokens.ANDAND;}
+"OROR"		 {last_token_text=yytext;return (int)Tokens.OROR;}
+"char"		 {last_token_text=yytext;return (int)Tokens.Kwd_char;}
+"int"		 {last_token_text=yytext;return (int)Tokens.Kwd_int;}
+"string"	 {last_token_text=yytext;return (int)Tokens.Kwd_string;}
 [a-zA-Z_][a-zA-Z0-9_]*            {last_token_text=yytext;return (int)Tokens.Ident;}
+"//"\n		 {}
 
 {opchar}         {return (int)(yytext[0]);}
 "\n"             {return (int)'\n';}
