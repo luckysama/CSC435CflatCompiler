@@ -128,7 +128,8 @@ MatchedStatement: Kwd_if '(' Expr ')' Kwd_then MatchedStatement Kwd_else Matched
         |       ';'
         ;
 		
-UnmatchedIfElse: Kwd_if '(' Expr ')' Kwd_then Statement
+UnmatchedIfElse: Kwd_if '(' Expr ')' Kwd_then MatchedStatement
+		| Kwd_if '(' Expr ')' Kwd_then UnmatchedIfElse
 		| Kwd_if '(' Expr ')' Kwd_then MatchedStatement Kwd_else UnmatchedIfElse
 		;
 
