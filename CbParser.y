@@ -87,7 +87,7 @@ MethodModifiers: MethodModifiers Kwd_static
 		;
 
 MethodReturnType: Kwd_void
-		|	Ident
+		|	Type
 		;
 		
 
