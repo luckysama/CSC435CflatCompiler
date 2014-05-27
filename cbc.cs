@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace CbCompiler
@@ -26,12 +27,17 @@ namespace CbCompiler
         }
 
         public void Launch()
-        { 
-        
+        {
+            FileStream sourcefile = File.OpenRead(args.SourceFileName);
+            scanner = new FrontEnd.Scanner(sourcefile);
+            parser = new FrontEnd.Parser(scanner);
+            parser.Parse();
         }
 
         /***********************************/
         private StartUpArgs args;
+        private FrontEnd.Scanner scanner;
+        private FrontEnd.Parser parser;
     };
     
     class CbCompilerEntry
@@ -39,13 +45,16 @@ namespace CbCompiler
 		static void Main(string [] args)
 		{
             CbCompilerKernel.StartUpArgs parsedArgs;
-            ParseCmdArgs(args, out parsedArgs);
-            //Procedure - OO boundary
-            CbCompilerKernel kernel = new CbCompilerKernel(parsedArgs);
-            kernel.Launch();
+            bool argSuccess = ParseCmdArgs(args, out parsedArgs);
+            if (argSuccess)
+            {
+                //Procedure - OO boundary
+                CbCompilerKernel kernel = new CbCompilerKernel(parsedArgs);
+                kernel.Launch();
+            }
 		}
 
-        private static void ParseCmdArgs(string [] args, out CbCompilerKernel.StartUpArgs parsedArgs)
+        private static bool ParseCmdArgs(string [] args, out CbCompilerKernel.StartUpArgs parsedArgs)
         { 
             parsedArgs = new CbCompilerKernel.StartUpArgs();
             foreach (string arg in args)
@@ -64,8 +73,9 @@ namespace CbCompiler
                     parsedArgs.SourceFileName = arg;
                     argCaught = true;
                 }
-                if (argCaught == false) { Console.WriteLine("Unrecognized parameter:" + arg); };
+                if (argCaught == false) { Console.WriteLine("Unrecognized parameter:" + arg); return false; };
             }
+            return true;//we've go through all args
         }
 	}
 
