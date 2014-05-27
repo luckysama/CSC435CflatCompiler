@@ -21,17 +21,14 @@ space [ \t]
 opchar [+\-*/=<>] // must escape - as it signifies a range
 underscore "_"
 %%
+	int nested = 0;
+"/*"	BEGIN(comment);	
 
-"/*"		{
-			int comment_caller = INITIAL;
-			int nested = 0;
-			BEGIN(comment);
-		}		
 <comment>[^*\n]*	{}
 <comment>"*"+[^*/\n]*	{}
-<comment>"/"+"*"	 ++nested;
+<comment>"/"+"*"	++nested;
 <comment>"*"+"/"	{	if(nested == 0) {
-					BEGIN(comment_caller);
+					BEGIN(INITIAL);
 				} else {
 					--nested;
 				}
