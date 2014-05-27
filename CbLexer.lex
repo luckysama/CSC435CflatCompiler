@@ -1,6 +1,9 @@
 %namespace CbCompiler.FrontEnd
 %tokentype Tokens
 
+%namespace CbCompiler.FrontEnd
+%tokentype Tokens
+
 %{
   public int lineNum = 1;
 
@@ -17,6 +20,7 @@
 %}
 
 %x comment
+%x strcnst
 space [ \t]
 opchar [+\-*/=<>] // must escape - as it signifies a range
 underscore "_"
@@ -27,12 +31,18 @@ underscore "_"
 <comment>[^*\n]*	{}
 <comment>"*"+[^*/\n]*	{}
 <comment>"/"+"*"	++nested;
+<comment>\n		++lineNum;
 <comment>"*"+"/"	{	if(nested == 0) {
 					BEGIN(INITIAL);
 				} else {
 					--nested;
 				}
 			}	
+
+\"		BEGIN(strcnst);
+
+<strcnst>[^\"]	{}
+<strcnst>^\\\"	{ BEGIN(INITIAL);last_token_text=yytext;return (int)Tokens.StringConst;}	
 
 {space}          {}
 "using"		 {last_token_text=yytext;return (int)Tokens.Kwd_using;}
