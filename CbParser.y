@@ -25,6 +25,7 @@
 %token		Kwd_int Kwd_char Kwd_string Kwd_void Kwd_null Kwd_new//data type keywords
 %token		Kwd_public Kwd_static Kwd_const	Kwd_virtual Kwd_override Kwd_class	 //class construct keywords
 %token 		Kwd_using 									 //preprocessor	
+%token 		Kwd_out										//formal parameter modifiers
 //non-keywords lexer tokens
 %token 		Ident Number StringConst
 
