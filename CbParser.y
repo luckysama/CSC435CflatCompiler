@@ -78,18 +78,23 @@ IdentList:      IdentList ',' Ident
         |       Ident
         ;
 
-MethodDecl:     Kwd_public MethodModifiers MethodReturnType Ident '(' OptFormals ')' Block
+MethodDecl:     Kwd_public MethodModifiers Type Ident '(' OptFormals ')' Block
+		|       Kwd_public MethodModifiers Kwd_void Ident '(' OptFormals ')' Block
+		|       Kwd_public Type Ident '(' OptFormals ')' Block
+		|       Kwd_public Kwd_void Ident '(' OptFormals ')' Block
         ;
 
 MethodModifiers: MethodModifiers Kwd_static
 		|	MethodModifiers Kwd_virtual
 		| 	MethodModifiers Kwd_override
-		|	/* empty */
+		|   Kwd_static
+		|   Kwd_virtual
+		|   Kwd_override
 		;
 
-MethodReturnType: Kwd_void
-		|	Type
-		;
+//MethodReturnType: Kwd_void
+//		|	Type
+//		;
 		
 
 OptFormals:     /* empty */
