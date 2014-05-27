@@ -4,8 +4,8 @@
 // It does not support class inheritance, it does not permit
 // classes to contain methods (other than Main).
 // Other language features may be missing too.
-
-%namespace  FrontEnd
+%partial
+%namespace  CbCompiler.FrontEnd
 %tokentype  Tokens
 
 // All tokens which can be used as operators in expressions
@@ -28,6 +28,8 @@
 %token 		Kwd_out										//formal parameter modifiers
 //non-keywords lexer tokens
 %token 		Ident Number StringConst
+
+%start Program
 
 %%
 

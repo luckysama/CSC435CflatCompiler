@@ -1,4 +1,4 @@
-%namespace FrontEnd
+%namespace CbCompiler.FrontEnd
 %tokentype Tokens
 
 %{
