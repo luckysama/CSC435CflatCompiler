@@ -27,7 +27,7 @@
 %token 		Kwd_using 									 //preprocessor	
 %token 		Kwd_out										//formal parameter modifiers
 //non-keywords lexer tokens
-%token 		Ident Number StringConst
+%token 		Ident Number StringConst CharConst
 %token		OpChar MiscChar WhiteSpace //placeholder for lexer token output
 
 %start Program

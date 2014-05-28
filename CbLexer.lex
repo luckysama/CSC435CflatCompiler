@@ -35,6 +35,7 @@ underscore "_"
 <strcnst>[^\"]	{}
 <strcnst>^\\\"	{ BEGIN(INITIAL);last_token_text=yytext; SayToken(Tokens.StringConst, yytext); return (int)Tokens.StringConst;}	
 
+\'.\'		 {last_token_text=yytext; SayToken(Tokens.CharConst, yytext[1]); return (int)Tokens.CharConst; }
 {space}      { /* SayToken(Tokens.WhiteSpace, yytext[0]); */ }
 "using"		 {last_token_text=yytext; SayToken(Tokens.Kwd_using); return (int)Tokens.Kwd_using;}
 "void"		 {last_token_text=yytext; SayToken(Tokens.Kwd_void); return (int)Tokens.Kwd_void;}
