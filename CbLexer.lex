@@ -5,24 +5,15 @@
 %tokentype Tokens
 
 %{
-  public int lineNum = 1;
-
+  public int lineNum;
   public int LineNumber { get{ return lineNum; } }
-
-  public override void yyerror( string msg, params object[] args ) { Console.WriteLine("{0}: ", lineNum); if
-    (args == null || args.Length == 0) { Console.WriteLine("{0}", msg); } else { Console.WriteLine(msg, args); }
-    }
-
-  public void yyerror( int lineNum, string msg, params object[] args ) {
-    Console.WriteLine("{0}: {1}", msg, args);
-  }
-
 %}
 
 %x comment
 %x strcnst
 space [ \t]
-opchar [+\-*/=<>] // must escape - as it signifies a range
+opchar [+\-*/=<>%] // must escape - as it signifies a range
+otherchar [\{\}\(\)\[\]\.\";:,'`]
 underscore "_"
 %%
 	int nested = 0;
@@ -42,41 +33,43 @@ underscore "_"
 \"		BEGIN(strcnst);
 
 <strcnst>[^\"]	{}
-<strcnst>^\\\"	{ BEGIN(INITIAL);last_token_text=yytext;return (int)Tokens.StringConst;}	
+<strcnst>^\\\"	{ BEGIN(INITIAL);last_token_text=yytext; SayToken(Tokens.StringConst, yytext); return (int)Tokens.StringConst;}	
 
-{space}          {}
-"using"		 {last_token_text=yytext;return (int)Tokens.Kwd_using;}
-"void"		 {last_token_text=yytext;return (int)Tokens.Kwd_void;}
-"return"	 {last_token_text=yytext;return (int)Tokens.Kwd_return;}
-"class"		 {last_token_text=yytext;return (int)Tokens.Kwd_class;}
-"else"		 {last_token_text=yytext;return (int)Tokens.Kwd_else;}
-"static"	 {last_token_text=yytext;return (int)Tokens.Kwd_static;}
-"public"	 {last_token_text=yytext;return (int)Tokens.Kwd_public;}
-"const"		 {last_token_text=yytext;return (int)Tokens.Kwd_if;}
-"break"		 {last_token_text=yytext;return (int)Tokens.Kwd_break;}
-"if"		 {last_token_text=yytext;return (int)Tokens.Kwd_if;}
-"new"		 {last_token_text=yytext;return (int)Tokens.Kwd_new;}
-"out"		 {last_token_text=yytext;return (int)Tokens.Kwd_out;}
-"override"	 {last_token_text=yytext;return (int)Tokens.Kwd_override;}
-"virtual"	 {last_token_text=yytext;return (int)Tokens.Kwd_virtual;}
-"while"		 {last_token_text=yytext;return (int)Tokens.Kwd_while;}
-"null"		 {last_token_text=yytext;return (int)Tokens.Kwd_null;}
-"=="		 {last_token_text=yytext;return (int)Tokens.EQEQ;}
-"!="		 {last_token_text=yytext;return (int)Tokens.NOTEQ;}
-">="		 {last_token_text=yytext;return (int)Tokens.GTEQ;}
-0|[1-9][0-9]*    {last_token_text=yytext;return (int)Tokens.Number;}
-"++"		 {last_token_text=yytext;return (int)Tokens.PLUSPLUS;}
-"&&"		 {last_token_text=yytext;return (int)Tokens.ANDAND;}
-"OROR"		 {last_token_text=yytext;return (int)Tokens.OROR;}
-"char"		 {last_token_text=yytext;return (int)Tokens.Kwd_char;}
-"int"		 {last_token_text=yytext;return (int)Tokens.Kwd_int;}
-"string"	 {last_token_text=yytext;return (int)Tokens.Kwd_string;}
-[a-zA-Z_][a-zA-Z0-9_]*            {last_token_text=yytext;return (int)Tokens.Ident;}
+{space}      { /* SayToken(Tokens.WhiteSpace, yytext[0]); */ }
+"using"		 {last_token_text=yytext; SayToken(Tokens.Kwd_using); return (int)Tokens.Kwd_using;}
+"void"		 {last_token_text=yytext; SayToken(Tokens.Kwd_void); return (int)Tokens.Kwd_void;}
+"return"	 {last_token_text=yytext; SayToken(Tokens.Kwd_return); return (int)Tokens.Kwd_return;}
+"class"		 {last_token_text=yytext; SayToken(Tokens.Kwd_class); return (int)Tokens.Kwd_class;}
+"else"		 {last_token_text=yytext; SayToken(Tokens.Kwd_else); return (int)Tokens.Kwd_else;}
+"static"	 {last_token_text=yytext; SayToken(Tokens.Kwd_static); return (int)Tokens.Kwd_static;}
+"public"	 {last_token_text=yytext; SayToken(Tokens.Kwd_public); return (int)Tokens.Kwd_public;}
+"const"		 {last_token_text=yytext; SayToken(Tokens.Kwd_const); return (int)Tokens.Kwd_const;}
+"break"		 {last_token_text=yytext; SayToken(Tokens.Kwd_break); return (int)Tokens.Kwd_break;}
+"if"		 {last_token_text=yytext; SayToken(Tokens.Kwd_if); return (int)Tokens.Kwd_if;}
+"new"		 {last_token_text=yytext; SayToken(Tokens.Kwd_new); return (int)Tokens.Kwd_new;}
+"out"		 {last_token_text=yytext; SayToken(Tokens.Kwd_out); return (int)Tokens.Kwd_out;}
+"override"	 {last_token_text=yytext; SayToken(Tokens.Kwd_override); return (int)Tokens.Kwd_override;}
+"virtual"	 {last_token_text=yytext; SayToken(Tokens.Kwd_virtual); return (int)Tokens.Kwd_virtual;}
+"while"		 {last_token_text=yytext; SayToken(Tokens.Kwd_while); return (int)Tokens.Kwd_while;}
+"null"		 {last_token_text=yytext; SayToken(Tokens.Kwd_null); return (int)Tokens.Kwd_null;}
+"char"		 {last_token_text=yytext; SayToken(Tokens.Kwd_char); return (int)Tokens.Kwd_char;}
+"int"		 {last_token_text=yytext; SayToken(Tokens.Kwd_int); return (int)Tokens.Kwd_int;}
+"string"	 {last_token_text=yytext; SayToken(Tokens.Kwd_string); return (int)Tokens.Kwd_string;}
+"=="		 {last_token_text=yytext; SayToken(Tokens.EQEQ); return (int)Tokens.EQEQ;}
+"!="		 {last_token_text=yytext; SayToken(Tokens.NOTEQ); return (int)Tokens.NOTEQ;}
+">="		 {last_token_text=yytext; SayToken(Tokens.GTEQ); return (int)Tokens.GTEQ;}
+"++"		 {last_token_text=yytext; SayToken(Tokens.PLUSPLUS); return (int)Tokens.PLUSPLUS;}
+"&&"		 {last_token_text=yytext; SayToken(Tokens.ANDAND); return (int)Tokens.ANDAND;}
+"||"		 {last_token_text=yytext; SayToken(Tokens.OROR); return (int)Tokens.OROR;}
+
+0|[1-9][0-9]*    {last_token_text=yytext; SayToken(Tokens.Number, yytext); return (int)Tokens.Number;}
+[a-zA-Z_][a-zA-Z0-9_]*            {last_token_text=yytext; SayToken(Tokens.Ident, yytext); return (int)Tokens.Ident;}
 "//"\n		 {}
 
-{opchar}         {return (int)(yytext[0]);}
-"\n"             {return (int)'\n';}
-"\r\n"           {return (int)'\n';}
+{opchar}         { SayToken(Tokens.OpChar, yytext[0]); return (int)(yytext[0]);}
+{otherchar}		 { SayToken(Tokens.MiscChar, yytext[0]); return (int)(yytext[0]);}
+"\n"             { /* SayToken(Tokens.WhiteSpace, "\\n"); */ }
+"\r\n"           { /* SayToken(Tokens.WhiteSpace, "\\r\\n"); */ }
 
 .                { yyerror("illegal character ({0})", yytext); }
 

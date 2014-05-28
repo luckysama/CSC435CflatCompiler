@@ -4,10 +4,17 @@ using System.Linq;
 using System.Text;
 using System.IO;
 using System.Threading.Tasks;
+using CbCompiler.FrontEnd;
+
 
 namespace CbCompiler
 {
-	class CbCompilerKernel
+    class ConsoleListener : TraceListener
+    {
+        public void Write(string msg) {Console.WriteLine(msg); }
+    }
+    
+    class CbCompilerKernel
     {
         public class StartUpArgs
         {
@@ -24,13 +31,24 @@ namespace CbCompiler
         public CbCompilerKernel(CbCompilerKernel.StartUpArgs args_in)
         {
             args = args_in;
+#if DEBUG
+            System.Diagnostics.Debugger.Launch();
+#endif
         }
 
         public void Launch()
         {
+            //initialize tracer
+            ConsoleListener listener = new ConsoleListener();
+            Tracer.AddTraceListener(listener);
+            //open file
             FileStream sourcefile = File.OpenRead(args.SourceFileName);
-            scanner = new FrontEnd.Scanner(sourcefile);
+            //initialize the scanner
+            ScannerParameters scannerparam = new ScannerParameters();
+            scannerparam.WriteToken = args.ListTokens;
+            scanner = new FrontEnd.Scanner(scannerparam,sourcefile);
             parser = new FrontEnd.Parser(scanner);
+            //parse!!
             parser.Parse();
         }
 
