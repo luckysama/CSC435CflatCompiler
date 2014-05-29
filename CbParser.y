@@ -122,14 +122,14 @@ TypeName:       Ident
         ;
 		
 Statement: MatchedStatement
-		| UnmatchedIfElse;
+		| UnmatchedStatement;
 
 MatchedStatement: Kwd_if '(' Expr ')' Kwd_then MatchedStatement Kwd_else MatchedStatement    
 		|		Designator '=' Expr ';'
         |       Designator '(' OptActuals ')' ';'
         |       Designator PLUSPLUS ';'
         |       Designator MINUSMINUS ';'
-        |       Kwd_while '(' Expr ')' Statement
+        |       Kwd_while '(' Expr ')' MatchedStatement
         |       Kwd_break ';'
         |       Kwd_return ';'
         |       Kwd_return Expr ';'
@@ -137,9 +137,10 @@ MatchedStatement: Kwd_if '(' Expr ')' Kwd_then MatchedStatement Kwd_else Matched
         |       ';'
         ;
 		
-UnmatchedIfElse: Kwd_if '(' Expr ')' Kwd_then MatchedStatement
-		| Kwd_if '(' Expr ')' Kwd_then UnmatchedIfElse
-		| Kwd_if '(' Expr ')' Kwd_then MatchedStatement Kwd_else UnmatchedIfElse
+UnmatchedStatement: Kwd_if '(' Expr ')' Kwd_then MatchedStatement
+		| Kwd_if '(' Expr ')' Kwd_then UnmatchedStatement
+		| Kwd_if '(' Expr ')' Kwd_then MatchedStatement Kwd_else UnmatchedStatement
+		| Kwd_while '(' Expr ')' UnmatchedStatement
 		;
 
 OptActuals:     /* empty */
