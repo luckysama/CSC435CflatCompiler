@@ -13,7 +13,25 @@ namespace CbCompiler
     {
         public void Write(string msg) {Console.WriteLine(msg); }
     }
-    
+    class FileListener : TraceListener
+    {
+        public FileListener(string filename)
+        {
+            stream = new FileStream(filename, FileMode.Create);
+            writer = new StreamWriter(stream);
+        }
+        public void Cleanup()
+        {
+            writer.Flush();
+            stream.Flush();
+            stream.Close();
+        }
+        public void Write(string msg) { writer.WriteLine(msg); }
+
+        private FileStream stream;
+        private StreamWriter writer;
+    }
+
     class CbCompilerKernel
     {
         public class StartUpArgs
@@ -42,6 +60,14 @@ namespace CbCompiler
             //initialize tracer
             ConsoleListener listener = new ConsoleListener();
             Tracer.AddTraceListener(listener);
+            //requirement for assignment 1
+            FileListener fileListener = null;
+            if (args.ListTokens == true)
+            {
+                fileListener = new FileListener("tokens.txt");
+                Tracer.AddTraceListener(fileListener);
+            }
+
             //open file
             FileStream sourcefile = File.OpenRead(args.SourceFileName);
             //initialize the scanner
@@ -53,6 +79,8 @@ namespace CbCompiler
             bool success = parser.Parse();
             if (success == true) tracer.Write("Parse success on file:" + args.SourceFileName);
             else tracer.Write("Parse failed on file:" + args.SourceFileName);
+            if (fileListener != null)
+            { fileListener.Cleanup();  }
         }
 
         /***********************************/

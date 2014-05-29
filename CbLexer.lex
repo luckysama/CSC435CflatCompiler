@@ -30,7 +30,7 @@ underscore "_"
 \"		BEGIN(strcnst);
 
 <strcnst>\\\"|[^\"]	{}
-<strcnst> \" { BEGIN(INITIAL);last_token_text=yytext; SayToken(Tokens.StringConst, yytext); return (int)Tokens.StringConst;}	
+<strcnst> \" {last_token_text=yytext; SayToken(Tokens.StringConst, yytext); BEGIN(INITIAL); return (int)Tokens.StringConst;}	
 
 \'.\'		 {last_token_text=yytext; SayToken(Tokens.CharConst, yytext[1]); return (int)Tokens.CharConst; }
 {space}      { /* SayToken(Tokens.WhiteSpace, yytext[0]); */ }
