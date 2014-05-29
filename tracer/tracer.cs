@@ -13,7 +13,7 @@ namespace CbCompiler
 
     class Tracer
     {
-        public enum Component { Lexer, Parser };
+        public enum Component { Lexer, Parser, Kernel };
         public static int AddTraceListener(TraceListener listener)
         {
             lock (threadLock)
@@ -59,6 +59,8 @@ namespace CbCompiler
                     { ComponentMarker = "Lex"; break; }
                 case Component.Parser :
                     { ComponentMarker = "Pas"; break; }
+                case Component.Kernel:
+                    { ComponentMarker = "Kernel"; break; }
             }
             ComponentName = name;
             ComponentID = ID.ToString();

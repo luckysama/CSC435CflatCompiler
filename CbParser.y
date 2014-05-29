@@ -111,20 +111,20 @@ FormalPars:     FormalDecl
 FormalDecl:     Type Ident
         ;
 
-Type:           TypeName
-        |       TypeName '[' ']'
-        ;
-
-TypeName:       Ident
+Type:           Ident
+        |       Ident '[' ']'
         |       Kwd_int
         |       Kwd_string
 		|		Kwd_char
-        ;
+		|       Kwd_int '[' ']'
+        |       Kwd_string '[' ']'
+		|		Kwd_char '[' ']'
+		;
 		
 Statement: MatchedStatement
 		| UnmatchedStatement;
 
-MatchedStatement: Kwd_if '(' Expr ')' Kwd_then MatchedStatement Kwd_else MatchedStatement    
+MatchedStatement: Kwd_if '(' Expr ')' MatchedStatement Kwd_else MatchedStatement    
 		|		Designator '=' Expr ';'
         |       Designator '(' OptActuals ')' ';'
         |       Designator PLUSPLUS ';'
@@ -137,9 +137,9 @@ MatchedStatement: Kwd_if '(' Expr ')' Kwd_then MatchedStatement Kwd_else Matched
         |       ';'
         ;
 		
-UnmatchedStatement: Kwd_if '(' Expr ')' Kwd_then MatchedStatement
-		| Kwd_if '(' Expr ')' Kwd_then UnmatchedStatement
-		| Kwd_if '(' Expr ')' Kwd_then MatchedStatement Kwd_else UnmatchedStatement
+UnmatchedStatement: Kwd_if '(' Expr ')' MatchedStatement
+		| Kwd_if '(' Expr ')' UnmatchedStatement
+		| Kwd_if '(' Expr ')' MatchedStatement Kwd_else UnmatchedStatement
 		| Kwd_while '(' Expr ')' UnmatchedStatement
 		;
 
@@ -154,8 +154,7 @@ ActPars:        ActPars ',' Expr
 Block:          '{' DeclsAndStmts '}'
         ;
 
-LocalDecl:      Ident IdentList ';' //local decl does not have "public"
-        |       Ident '[' ']' IdentList ';'
+LocalDecl:      Type IdentList ';' //local decl does not have "public"
         ;
 
 DeclsAndStmts:   /* empty */
@@ -181,6 +180,7 @@ Expr:           Expr OROR Expr
         |       Designator '(' OptActuals ')'
         |       Number
         |       StringConst
+		|		CharConst
         |       StringConst '.' '[' Ident ']'// Ident must be "Length"
         |       Kwd_new Ident '(' ')'
         |       Kwd_new Ident '[' Expr ']'

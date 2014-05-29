@@ -2,7 +2,7 @@
 %tokentype Tokens
 
 %{
-  public int lineNum;
+  public int lineNum = 1; //don't start from 0!!
   public int LineNumber { get{ return lineNum; } }
 %}
 
@@ -29,8 +29,8 @@ underscore "_"
 
 \"		BEGIN(strcnst);
 
-<strcnst>[^\"]	{}
-<strcnst>^\\\"	{ BEGIN(INITIAL);last_token_text=yytext; SayToken(Tokens.StringConst, yytext); return (int)Tokens.StringConst;}	
+<strcnst>\\\"|[^\"]	{}
+<strcnst> \" { BEGIN(INITIAL);last_token_text=yytext; SayToken(Tokens.StringConst, yytext); return (int)Tokens.StringConst;}	
 
 \'.\'		 {last_token_text=yytext; SayToken(Tokens.CharConst, yytext[1]); return (int)Tokens.CharConst; }
 {space}      { /* SayToken(Tokens.WhiteSpace, yytext[0]); */ }
@@ -56,6 +56,7 @@ underscore "_"
 "=="		 {last_token_text=yytext; SayToken(Tokens.EQEQ); return (int)Tokens.EQEQ;}
 "!="		 {last_token_text=yytext; SayToken(Tokens.NOTEQ); return (int)Tokens.NOTEQ;}
 ">="		 {last_token_text=yytext; SayToken(Tokens.GTEQ); return (int)Tokens.GTEQ;}
+"<="		 {last_token_text=yytext; SayToken(Tokens.LTEQ); return (int)Tokens.LTEQ;}
 "++"		 {last_token_text=yytext; SayToken(Tokens.PLUSPLUS); return (int)Tokens.PLUSPLUS;}
 "&&"		 {last_token_text=yytext; SayToken(Tokens.ANDAND); return (int)Tokens.ANDAND;}
 "||"		 {last_token_text=yytext; SayToken(Tokens.OROR); return (int)Tokens.OROR;}
@@ -66,8 +67,8 @@ underscore "_"
 
 {opchar}         { SayToken(Tokens.OpChar, yytext[0]); return (int)(yytext[0]);}
 {otherchar}		 { SayToken(Tokens.MiscChar, yytext[0]); return (int)(yytext[0]);}
-"\n"             { /* SayToken(Tokens.WhiteSpace, "\\n"); */ }
-"\r\n"           { /* SayToken(Tokens.WhiteSpace, "\\r\\n"); */ }
+"\n"             { /* SayToken(Tokens.WhiteSpace, "\\n"); */ lineNum ++; }
+"\r\n"           { /* SayToken(Tokens.WhiteSpace, "\\r\\n"); */ lineNum ++;}
 
 .                { yyerror("illegal character ({0})", yytext); }
 

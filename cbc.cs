@@ -34,6 +34,7 @@ namespace CbCompiler
 #if DEBUG
             System.Diagnostics.Debugger.Launch();
 #endif
+            tracer = new Tracer(Tracer.Component.Kernel, "cbcKernel", 0);
         }
 
         public void Launch()
@@ -49,13 +50,16 @@ namespace CbCompiler
             scanner = new FrontEnd.Scanner(scannerparam,sourcefile);
             parser = new FrontEnd.Parser(scanner);
             //parse!!
-            parser.Parse();
+            bool success = parser.Parse();
+            if (success == true) tracer.Write("Parse success on file:" + args.SourceFileName);
+            else tracer.Write("Parse failed on file:" + args.SourceFileName);
         }
 
         /***********************************/
         private StartUpArgs args;
         private FrontEnd.Scanner scanner;
         private FrontEnd.Parser parser;
+        private Tracer tracer;
     };
     
     class CbCompilerEntry
