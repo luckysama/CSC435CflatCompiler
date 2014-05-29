@@ -7,7 +7,6 @@
 %}
 
 %x comment
-%x strcnst
 space [ \t]
 opchar [+\-*/=<>%] // must escape - as it signifies a range
 otherchar [\{\}\(\)\[\]\.\";:,'`]
@@ -27,10 +26,8 @@ underscore "_"
 				}
 			}	
 
-\"		BEGIN(strcnst);
 
-<strcnst>\\\"|[^\"]	{}
-<strcnst> \" {last_token_text=yytext; SayToken(Tokens.StringConst, yytext); BEGIN(INITIAL); return (int)Tokens.StringConst;}	
+\"\\+\"|[^\"]*\"	{last_token_text=yytext; SayToken(Tokens.StringConst, yytext); BEGIN(INITIAL); return (int)Tokens.StringConst;}	
 
 \'.\'		 {last_token_text=yytext; SayToken(Tokens.CharConst, yytext[1]); return (int)Tokens.CharConst; }
 {space}      { /* SayToken(Tokens.WhiteSpace, yytext[0]); */ }
