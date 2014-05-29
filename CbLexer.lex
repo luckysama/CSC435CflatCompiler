@@ -1,9 +1,6 @@
 %namespace CbCompiler.FrontEnd
 %tokentype Tokens
 
-%namespace CbCompiler.FrontEnd
-%tokentype Tokens
-
 %{
   public int lineNum;
   public int LineNumber { get{ return lineNum; } }
