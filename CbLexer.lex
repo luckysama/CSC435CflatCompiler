@@ -6,7 +6,6 @@
   public int LineNumber { get{ return lineNum; } }
 %}
 
-%x strcnst
 %x comment
 space [ \t]
 opchar [+\-*/=<>%] // must escape - as it signifies a range
@@ -14,6 +13,7 @@ otherchar [\{\}\(\)\[\]\.\";:,'`]
 underscore "_"
 %%
 	int nested = 0;
+	
 "/*"	BEGIN(comment);	
 
 <comment>[^*\n]*	{}
@@ -26,13 +26,8 @@ underscore "_"
 					--nested;
 				}
 			}	
-	
-	char string_buf[MAX_STR_CONST];
-	char *string_buf_ptr			
-\"		string_buf_ptr = string_buf; BEGIN(strcnst);
-  
-<strcnst>\\\"|[^\"]	*string_buf++ = yytext
-<strcnst> \" {*string_buf_ptr = '\0';last_token_text=string_buf; SayToken(Tokens.StringConst, string_buf); BEGIN(INITIAL); return (int)Tokens.StringConst;}		
+			
+\"([^\"]|\\\")*\"	{last_token_text=yytext; SayToken(Tokens.StringConst, yytext); BEGIN(INITIAL); return (int)Tokens.StringConst;}	
 
 \'.\'		 {last_token_text=yytext; SayToken(Tokens.CharConst, yytext[1]); return (int)Tokens.CharConst; }
 {space}      { /* SayToken(Tokens.WhiteSpace, yytext[0]); */ }
