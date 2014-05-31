@@ -14,13 +14,14 @@ underscore "_"
 %%
 	int nested = 0;
 	
-"/*"	BEGIN(comment);	
+"/*"	BEGIN(comment);	nested = 1;
 
-<comment>[^*\n]*	{}
-<comment>"*"+[^*/\n]*	{}
-<comment>"/"+"*"	++nested;
-<comment>\n		++lineNum;
-<comment>"*"+"/"	{	if(nested == 0) {
+<comment>[^*\n\r]*	{}
+<comment>"*"+[^*/\n\r]*	{}
+<comment>"/*"	++nested;
+<comment>"\r\n"		++lineNum;
+<comment>"\n\r"		++lineNum;
+<comment>"*/"	{	if(nested == 0) {
 					BEGIN(INITIAL);
 				} else {
 					--nested;
@@ -28,7 +29,7 @@ underscore "_"
 			}	
 			
 \"([^\"]|\\\")*\"	{last_token_text=yytext; SayToken(Tokens.StringConst, yytext); BEGIN(INITIAL); return (int)Tokens.StringConst;}	
-
+"//"(.)*\n		 {}
 \'.\'		 {last_token_text=yytext; SayToken(Tokens.CharConst, yytext[1]); return (int)Tokens.CharConst; }
 {space}      { /* SayToken(Tokens.WhiteSpace, yytext[0]); */ }
 "using"		 {last_token_text=yytext; SayToken(Tokens.Kwd_using); return (int)Tokens.Kwd_using;}
@@ -60,7 +61,7 @@ underscore "_"
 
 0|[1-9][0-9]*    {last_token_text=yytext; SayToken(Tokens.Number, yytext); return (int)Tokens.Number;}
 [a-zA-Z_][a-zA-Z0-9_]*            {last_token_text=yytext; SayToken(Tokens.Ident, yytext); return (int)Tokens.Ident;}
-"//"\n		 {}
+
 
 {opchar}         { SayToken(Tokens.OpChar, yytext[0]); return (int)(yytext[0]);}
 {otherchar}		 { SayToken(Tokens.MiscChar, yytext[0]); return (int)(yytext[0]);}

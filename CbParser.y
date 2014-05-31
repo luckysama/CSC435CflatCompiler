@@ -17,7 +17,9 @@
 %nonassoc   '>' GTEQ '<' LTEQ
 %left       '+' '-'
 %left       '*' '/' '%'
-%left       UMINUS
+%nonassoc	VARREF
+%left       UMINUS CAST
+%nonassoc	PAREN
 
 // All other named tokens (i.e. the single character tokens are omitted)
 // The order in which they are listed here does not matter.
@@ -72,6 +74,7 @@ ConstDecl:      Kwd_public Kwd_const Type Ident '=' InitVal ';'
 
 InitVal:        Number
         |       StringConst
+		|		CharConst
         ;
 
 FieldDecl:      Kwd_public Type IdentList ';'
@@ -184,16 +187,25 @@ Expr:           Expr OROR Expr
         |       StringConst '.' '[' Ident ']'// Ident must be "Length"
         |       Kwd_new Ident '(' ')'
         |       Kwd_new Ident '[' Expr ']'
-        |       '(' Expr ')'
+		|		Kwd_new Kwd_int '[' Expr ']'
+		|		Kwd_new Kwd_string '[' Expr ']'
+		|		Kwd_new Kwd_char '[' Expr ']'
+        |       '(' Expr ')' %prec PAREN
+		|		'(' Expr ')' Expr %prec CAST
+		|		'(' Kwd_int ')' Expr %prec CAST
+		|		'(' Kwd_string ')' Expr %prec CAST
+		|		'(' Kwd_char ')' Expr %prec CAST
 		|		Kwd_null
         ;
 
 Designator:     Ident Qualifiers
-        ;
+		|		Ident
+		; 
 
 Qualifiers:     '.' Ident Qualifiers
         |       '[' Expr ']' Qualifiers
-        |       /* empty */
+        |       '.' Ident
+		|		'[' Expr ']'
         ;
 
 %%
