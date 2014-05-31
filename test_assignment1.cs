@@ -53,3 +53,18 @@ class Lists {
         Console.WriteLine("\n");
     }
 }
+
+//additional test code for assignment 1
+
+/* /* nested comment */ */
+
+class LexerTestCode {
+ public void test() {
+	int a;
+	string b;
+	b = (string) a;
+	Lists c;
+	c = (Lists) c;
+	c = ( 1 + b ) a; //nonsense type casting, still success
+	}
+}
