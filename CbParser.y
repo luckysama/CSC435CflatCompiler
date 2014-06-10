@@ -1,38 +1,51 @@
 /* CbParser.y */
 
-// The grammar shown in this file is INCOMPLETE!!
-// It does not support class inheritance, it does not permit
-// classes to contain methods (other than Main).
-// Other language features may be missing too.
-%partial
-%namespace  CbCompiler.FrontEnd
+// The grammar has one shift-reduce conflict for the if-then-else ambiguity.
+// As long as the parser shifts in the conflict state, the language will be
+// parsed correctly.
+//
+// Because the cast operation syntax is hard to express as a LALR(1) grammar,
+// the grammar rules below accept some syntax for expressions which is nonsense.
+// There are two kinds of nonsense:
+//  1.  Any expression can be used instead of a typename in a cast. For example:
+//             (x+1)y
+//  2.  An index can be omitted from an array access. For example,
+//              a = ARR[]+2;
+// A later semantic pass over the AST must check for both kinds of nonsense and
+// produce error messages if discovered.
+//
+// The grammar tricks used to support casts were obtained from here:
+//      http://msdn.microsoft.com/en-us/library/aa245175(v=vs.60).aspx
+//
+// Author:  Nigel Horspool
+// Date:    June 2014
+
+%namespace  FrontEnd
 %tokentype  Tokens
+%output=CbParser.cs
+%YYSTYPE    AST     // set datatype of $$, $1, $2... attributes
 
 // All tokens which can be used as operators in expressions
 // they are ordered by precedence level (lowest first)
 %right      '='
 %left       OROR
 %left       ANDAND
-%nonassoc   EQEQ NOTEQ PLUSPLUS MINUSMINUS
+%nonassoc   EQEQ NOTEQ
 %nonassoc   '>' GTEQ '<' LTEQ
 %left       '+' '-'
 %left       '*' '/' '%'
-%nonassoc	VARREF
-%left       UMINUS CAST
-%nonassoc	PAREN
 
 // All other named tokens (i.e. the single character tokens are omitted)
 // The order in which they are listed here does not matter.
-%token 		Kwd_while Kwd_if Kwd_then Kwd_else Kwd_break Kwd_return //branching keywords
-%token		Kwd_int Kwd_char Kwd_string Kwd_void Kwd_null Kwd_new//data type keywords
-%token		Kwd_public Kwd_static Kwd_const	Kwd_virtual Kwd_override Kwd_class	 //class construct keywords
-%token 		Kwd_using 									 //preprocessor	
-%token 		Kwd_out										//formal parameter modifiers
-//non-keywords lexer tokens
-%token 		Ident Number StringConst CharConst
-%token		OpChar MiscChar WhiteSpace //placeholder for lexer token output
 
-%start Program
+// Keywords
+%token      Kwd_break Kwd_char Kwd_class Kwd_const Kwd_else Kwd_if Kwd_int
+%token      Kwd_new Kwd_null Kwd_override Kwd_public Kwd_return
+%token      Kwd_static Kwd_string Kwd_using Kwd_virtual Kwd_void Kwd_while
+
+// Other tokens
+%token      PLUSPLUS MINUSMINUS Ident CharConst IntConst StringConst
+
 
 %%
 
@@ -43,65 +56,59 @@
    ************************************************************************* */
 
 Program:        UsingList ClassList
+                { Tree = AST.NonLeaf(NodeType.Program, $1.LineNumber, $1, $2); }
         ;
 
 UsingList:      /* empty */
-        |       Kwd_using Ident ';' UsingList
+			    { $$ = AST.Kary(NodeType.UsingList, LineNumber); }
+        |       UsingList Kwd_using Identifier ';'
+			    { $1.AddChild($3);  $$ = $1; }
         ;
 
-ClassList:	    ClassList ClassDecl
-		|		ClassDecl
-		;
+ClassList:      ClassDecl
+			    { $$ = AST.Kary(NodeType.ClassList, LineNumber); }
+        |       ClassList ClassDecl
+			    { $1.AddChild($2);  $$ = $1; }
+        ;
 
-ClassDecl:		Kwd_class Ident ClassInherit ClassBody
-		;
+ClassDecl:      Kwd_class Identifier  '{'  DeclList  '}'
+                { $$ = AST.NonLeaf(NodeType.Class, $2.LineNumber, $2, null, $4); }
+        |       Kwd_class Identifier  ':' Identifier  '{'  DeclList  '}'
+                { $$ = AST.NonLeaf(NodeType.Class, $2.LineNumber, $2, $4, $6); }
+        ;
 
-ClassInherit:	':' Ident
-		|		/* empty */
-		;
-		
-ClassBody: 		'{' DeclList '}'
-		;
-
-DeclList:       DeclList ConstDecl
-        |       DeclList MethodDecl
+DeclList:       /* empty */
+        |       DeclList ConstDecl
         |       DeclList FieldDecl
-		| 		/* empty */
+        |       DeclList MethodDecl     
         ;
 
-ConstDecl:      Kwd_public Kwd_const Type Ident '=' InitVal ';'
+ConstDecl:      Kwd_public Kwd_const Type Identifier '=' InitVal ';'
         ;
 
-InitVal:        Number
+InitVal:        IntConst
+        |       CharConst
         |       StringConst
-		|		CharConst
         ;
 
 FieldDecl:      Kwd_public Type IdentList ';'
         ;
 
-IdentList:      IdentList ',' Ident
-        |       Ident
+IdentList:      IdentList ',' Identifier
+        |       Identifier
         ;
 
-MethodDecl:     Kwd_public MethodModifiers Type Ident '(' OptFormals ')' Block
-		|       Kwd_public MethodModifiers Kwd_void Ident '(' OptFormals ')' Block
-		|       Kwd_public Type Ident '(' OptFormals ')' Block
-		|       Kwd_public Kwd_void Ident '(' OptFormals ')' Block
+MethodDecl:     Kwd_public MethodAttr MethodType Identifier '(' OptFormals ')' Block
         ;
 
-MethodModifiers: MethodModifiers Kwd_static
-		|	MethodModifiers Kwd_virtual
-		| 	MethodModifiers Kwd_override
-		|   Kwd_static
-		|   Kwd_virtual
-		|   Kwd_override
-		;
+MethodAttr:     Kwd_static
+        |       Kwd_virtual
+        |       Kwd_override
+        ;
 
-//MethodReturnType: Kwd_void
-//		|	Type
-//		;
-		
+MethodType:     Kwd_void
+        |       Type
+        ;
 
 OptFormals:     /* empty */
         |       FormalPars
@@ -111,40 +118,35 @@ FormalPars:     FormalDecl
         |       FormalPars ',' FormalDecl
         ;
 
-FormalDecl:     Type Ident
+FormalDecl:     Type Identifier
         ;
 
-Type:           Ident
-        |       Ident '[' ']'
-        |       Kwd_int
-        |       Kwd_string
-		|		Kwd_char
-		|       Kwd_int '[' ']'
-        |       Kwd_string '[' ']'
-		|		Kwd_char '[' ']'
-		;
-		
-Statement: MatchedStatement
-		| UnmatchedStatement;
+Type:           TypeName
+        |       TypeName '[' ']'
+        ;
 
-MatchedStatement: Kwd_if '(' Expr ')' MatchedStatement Kwd_else MatchedStatement    
-		|		Designator '=' Expr ';'
+TypeName:       Identifier
+        |       BuiltInType
+        ;
+
+BuiltInType:    Kwd_int
+        |       Kwd_string
+        |       Kwd_char
+        ;
+
+Statement:      Designator '=' Expr ';'
         |       Designator '(' OptActuals ')' ';'
         |       Designator PLUSPLUS ';'
         |       Designator MINUSMINUS ';'
-        |       Kwd_while '(' Expr ')' MatchedStatement
+        |       Kwd_if '(' Expr ')' Statement Kwd_else Statement
+        |       Kwd_if '(' Expr ')' Statement
+        |       Kwd_while '(' Expr ')' Statement
         |       Kwd_break ';'
         |       Kwd_return ';'
         |       Kwd_return Expr ';'
         |       Block
         |       ';'
         ;
-		
-UnmatchedStatement: Kwd_if '(' Expr ')' MatchedStatement
-		| Kwd_if '(' Expr ')' UnmatchedStatement
-		| Kwd_if '(' Expr ')' MatchedStatement Kwd_else UnmatchedStatement
-		| Kwd_while '(' Expr ')' UnmatchedStatement
-		;
 
 OptActuals:     /* empty */
         |       ActPars
@@ -157,7 +159,9 @@ ActPars:        ActPars ',' Expr
 Block:          '{' DeclsAndStmts '}'
         ;
 
-LocalDecl:      Type IdentList ';' //local decl does not have "public"
+LocalDecl:      TypeName IdentList ';'
+        |       Identifier '[' ']' IdentList ';'
+        |       BuiltInType '[' ']' IdentList ';'
         ;
 
 DeclsAndStmts:   /* empty */
@@ -178,38 +182,66 @@ Expr:           Expr OROR Expr
         |       Expr '*' Expr
         |       Expr '/' Expr
         |       Expr '%' Expr
-        |       '-' Expr %prec UMINUS
-        |       Designator
+        |       UnaryExpr
+        ;
+
+UnaryExpr:      '-' Expr
+        |       UnaryExprNotUMinus
+        ;
+
+UnaryExprNotUMinus:
+                Designator
         |       Designator '(' OptActuals ')'
-        |       Number
+        |       Kwd_null
+        |       IntConst
+        |       CharConst
         |       StringConst
-		|		CharConst
-        |       StringConst '.' '[' Ident ']'// Ident must be "Length"
-        |       Kwd_new Ident '(' ')'
-        |       Kwd_new Ident '[' Expr ']'
-		|		Kwd_new Kwd_int '[' Expr ']'
-		|		Kwd_new Kwd_string '[' Expr ']'
-		|		Kwd_new Kwd_char '[' Expr ']'
-        |       '(' Expr ')' %prec PAREN
-		|		'(' Expr ')' Expr %prec CAST
-		|		'(' Kwd_int ')' Expr %prec CAST
-		|		'(' Kwd_string ')' Expr %prec CAST
-		|		'(' Kwd_char ')' Expr %prec CAST
-		|		Kwd_null
+        |       StringConst '.' Identifier // Identifier must be "Length"
+        |       Kwd_new Identifier '(' ')'
+        |       Kwd_new TypeName '[' Expr ']'
+        |       '(' Expr ')'
+        |       '(' Expr ')' UnaryExprNotUMinus                 // cast
+        |       '(' BuiltInType ')' UnaryExprNotUMinus          // cast
+        |       '(' BuiltInType '[' ']' ')' UnaryExprNotUMinus  // cast
+
         ;
 
-Designator:     Ident Qualifiers
-		|		Ident
-		; 
+Designator:     Identifier Qualifiers
+        ;
 
-Qualifiers:     '.' Ident Qualifiers
+Qualifiers:     '.' Identifier Qualifiers
         |       '[' Expr ']' Qualifiers
-        |       '.' Ident
-		|		'[' Expr ']'
+        |       '[' ']' Qualifiers   // needed for cast syntax
+        |       /* empty */
         ;
 
+Identifier:     Ident   { $$ = AST.Leaf(NodeType.Ident, LineNumber, lexer.yytext); }
+        ;
 %%
 
+// returns the AST constructed for the Cb program
+public AST Tree { get; private set; }
 
+private Scanner lexer;
+
+// returns the lexer's current line number
+public int LineNumber {
+    get{ return lexer.LineNumber == 0? 1 : lexer.LineNumber; }
+}
+
+// Use this function for reporting non-fatal errors discovered
+// while parsing and building the AST.
+// An example usage is:
+//    yyerror( "Identifier {0} has not been declared", idname );
+public void yyerror( string format, params Object[] args ) {
+    Console.Write("{0}: ", LineNumber);
+    Console.WriteLine(format, args);
+}
+
+// The parser needs a suitable constructor
+public Parser( Scanner src ) : base(null) {
+    lexer = src;
+    Scanner = src;
+}
 
 
