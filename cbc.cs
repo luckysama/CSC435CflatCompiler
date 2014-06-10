@@ -1,134 +1,125 @@
+/* cbc.cs
+
+    This will become the main module for invoking each step
+    of the compilation process.
+    Currently, cbc only lexes and parses the input.
+
+    Datea: 2012-2014
+*/
+
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.IO;
-using System.Threading.Tasks;
-using CbCompiler.FrontEnd;
+using System.Collections.Generic;
+using FrontEnd;
 
 
-namespace CbCompiler
-{
-    class ConsoleListener : TraceListener
-    {
-        public void Write(string msg) {Console.WriteLine(msg); }
-    }
-    class FileListener : TraceListener
-    {
-        public FileListener(string filename)
-        {
-            stream = new FileStream(filename, FileMode.Create);
-            writer = new StreamWriter(stream);
-        }
-        public void Cleanup()
-        {
-            writer.Flush();
-            stream.Flush();
-            stream.Close();
-        }
-        public void Write(string msg) { writer.WriteLine(msg); }
-
-        private FileStream stream;
-        private StreamWriter writer;
-    }
-
-    class CbCompilerKernel
-    {
-        public class StartUpArgs
-        {
-            public bool ListTokens;
-            public bool IsDebug;
-            public string SourceFileName;
-            public StartUpArgs()
-            {
-                ListTokens = false;
-                IsDebug = false;
-            }
-        }
-
-        public CbCompilerKernel(CbCompilerKernel.StartUpArgs args_in)
-        {
-            args = args_in;
-#if DEBUG
-            System.Diagnostics.Debugger.Launch();
-#endif
-            tracer = new Tracer(Tracer.Component.Kernel, "cbcKernel", 0);
-        }
-
-        public void Launch()
-        {
-            //initialize tracer
-            ConsoleListener listener = new ConsoleListener();
-            Tracer.AddTraceListener(listener);
-            //requirement for assignment 1
-            FileListener fileListener = null;
-            if (args.ListTokens == true)
-            {
-                fileListener = new FileListener("tokens.txt");
-                Tracer.AddTraceListener(fileListener);
-            }
-
-            //open file
-            FileStream sourcefile = File.OpenRead(args.SourceFileName);
-            //initialize the scanner
-            ScannerParameters scannerparam = new ScannerParameters();
-            scannerparam.WriteToken = args.ListTokens;
-            scanner = new FrontEnd.Scanner(scannerparam,sourcefile);
-            parser = new FrontEnd.Parser(scanner);
-            //parse!!
-            bool success = parser.Parse();
-            if (success == true) tracer.Write("Parse success on file:" + args.SourceFileName);
-            else tracer.Write("Parse failed on file:" + args.SourceFileName);
-            if (fileListener != null)
-            { fileListener.Cleanup();  }
-        }
-
-        /***********************************/
-        private StartUpArgs args;
-        private FrontEnd.Scanner scanner;
-        private FrontEnd.Parser parser;
-        private Tracer tracer;
-    };
+public class Start {
     
-    class CbCompilerEntry
-	{
-		static void Main(string [] args)
-		{
-            CbCompilerKernel.StartUpArgs parsedArgs;
-            bool argSuccess = ParseCmdArgs(args, out parsedArgs);
-            if (argSuccess)
-            {
-                //Procedure - OO boundary
-                CbCompilerKernel kernel = new CbCompilerKernel(parsedArgs);
-                kernel.Launch();
-            }
-		}
+    static AST DoParse( string filename, bool printTokens ) {
+        AST result = null;
+        FileStream src = File.OpenRead(filename);
+        Scanner sc = new Scanner(src);
+        sc.Initialize();
+        if (printTokens)
+            sc.TrackTokens("tokens.txt");
 
-        private static bool ParseCmdArgs(string [] args, out CbCompilerKernel.StartUpArgs parsedArgs)
-        { 
-            parsedArgs = new CbCompilerKernel.StartUpArgs();
-            foreach (string arg in args)
-            {
-                bool argCaught = false;
-                if (arg[0] == '-')
-                {
-                    //a switch command
-                    string cmd = arg.Substring(1);
-                    if (cmd.CompareTo("tokens") == 0) { parsedArgs.ListTokens = true; argCaught = true; continue; };
-                    if (cmd.CompareTo("debug") == 0) { parsedArgs.IsDebug = true; argCaught = true; continue; };
-                }
-                else
-                {
-                    //a string parameter
-                    parsedArgs.SourceFileName = arg;
-                    argCaught = true;
-                }
-                if (argCaught == false) { Console.WriteLine("Unrecognized parameter:" + arg); return false; };
-            }
-            return true;//we've go through all args
+        Parser parser = new Parser(sc);
+    
+        if (parser.Parse())
+            result = parser.Tree;
+
+        sc.CleanUp();
+        return result;
+    }
+    
+    static void Usage() {
+        string[] usage = {
+            "Usage:",
+            "    cbc [options] filename",
+            "where 'filename' must have the suffix '.cb' or '.cs' and the options are:",
+            "    -ast      print the AST after construction",
+            "    -tc       print the AST after type checking",
+            "    -ns       recursively print the contents of the top-level namespace",
+            "    -tokens   print the token sequence after scanning"
+        };
+        foreach(string s in usage) {
+            Console.WriteLine("{0}", s);
         }
-	}
+        System.Environment.Exit(1);  // terminate!
+    }
+    
+    public static void Main( string[] args ) {
+        string filename = null;
+        bool printAST = false;
+        bool printASTtc = false;
+        bool printTokens = false;
+        bool printNS = false;
 
- 
+        foreach( string arg in args ) {
+            if (arg.StartsWith("-")) {
+                switch(arg) {
+                case "-ast":
+                    printAST = true;  break;
+                case "-ns":
+                    printNS = true;  break;
+                case "-tokens":
+                    printTokens = true;  break;
+                case "-tc":
+                    printASTtc = true;  break;
+                default:
+                    Console.WriteLine("Unknown option {0}, ignored", arg);
+                    break;
+                }
+            } else {
+                if (filename != null)
+                    Usage();
+                filename = arg;
+            }
+        }
+        // require exactly one input file to be provided
+        if (filename == null)
+            Usage();
+        // require a filename suffix of .cb or .cs
+        if (!filename.EndsWith(".cb") && !filename.EndsWith(".cs"))
+            Usage();
+
+        AST tree = DoParse(filename,printTokens);
+
+        if (tree == null) {
+            Console.WriteLine("\n-- no tree constructed");
+            return;
+        }
+
+        if (printAST) {
+        	PrVisitor printVisitor = new PrVisitor();
+            tree.Accept(printVisitor,0);
+        }
+
+        CbType.Initialize();  // initialize some predefined types and top-level namespace
+
+        // Create and invoke your top-level namespace visitor here
+        
+        if (printNS)
+            NameSpace.Print();
+
+/*
+        int numErrors;
+        
+        // perform typechecking ...
+
+        if (printASTtc) {
+        	PrVisitor printVisitor = new PrVisitor();
+            tree.Accept(printVisitor);    // print AST with datatype annotations
+        }
+
+		// generate intermediate code
+
+        if (numErrors > 0) {
+            Console.WriteLine("\n{0} errors reported, compilation halted", numErrors);
+            return;
+        }
+*/
+
+    }
+
 }
-
