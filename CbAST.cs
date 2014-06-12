@@ -16,12 +16,14 @@ namespace FrontEnd {
 public enum NodeType {
     Program, UsingList, ClassList, Class, MemberList, Const, Field,
     Method, IdList, FormalList, Formal,
+    Designator, Qualifiers,
     Static, Virtual, Override, Array, Block, LocalDecl,
     Assign, If, While, Break, Return, Call, ActualList,
     PlusPlus, MinusMinus, Empty, Add, Sub, Mul, Div, Mod,
     And, Or, Equals, NotEquals, LessThan, GreaterThan, LessOrEqual,
     GreaterOrEqual, UnaryMinus, UnaryPlus, Index, NewArray, NewClass,
-    Null, Cast, Dot, IntConst, StringConst, CharConst, Ident
+    Null, Cast, Dot, IntConst, StringConst, CharConst, Ident, 
+    IntType, StringType, CharType, VoidType 
 };
 
 public abstract class AST {
