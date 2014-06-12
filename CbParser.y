@@ -172,16 +172,16 @@ DeclsAndStmts:   /* empty */
 Expr:           Expr OROR Expr		{ $$ = AST.NonLeaf(NodeType.Or, $1.LineNumber, $1, $2, $3); } 		
         |       Expr ANDAND Expr	{ $$ = AST.NonLeaf(NodeType.And,$1.LineNumber,$1, $2, $3); }
         |       Expr EQEQ Expr		{ $$ = AST.NonLeaf(NodeType.Equals,$1.LineNumber,$1, $2,$3); }
-        |       Expr NOTEQ Expr		{ $$ = AST.NonLeaf(NodeType.Or, $1.LineNumber, $1, $2, $3); }
+        |       Expr NOTEQ Expr		{ $$ = AST.NonLeaf(NodeType.NotEquals, $1.LineNumber, $1, $2, $3); }
         |       Expr LTEQ Expr		{ $$ = AST.NonLeaf(NodeType.LessOrEqual, $1.LineNumber, $1, $2, $3); }
-        |       Expr '<' Expr		{ $$ = AST.NonLeaf(NodeType.LessThan, $1.LineNumber, $1, '<', $3); }
+        |       Expr '<' Expr		{ $$ = AST.NonLeaf(NodeType.LessThan, $1.LineNumber, $1, $2, $3); }
         |       Expr GTEQ Expr		{ $$ = AST.NonLeaf(NodeType.GreaterOrEqual, $1.LineNumber, $1, $2, $3); }
-        |       Expr '>' Expr		{ $$ = AST.NonLeaf(NodeType.GreaterThan, $1.LineNumber, $1, '>', $3); }
-        |       Expr '+' Expr		{ $$ = AST.NonLeaf(NodeType.Add, $1.LineNumber, $1, '+', $3); }
-        |       Expr '-' Expr		{ $$ = AST.NonLeaf(NodeType.Sub, $1.LineNumber, $1, '-', $3); }
-        |       Expr '*' Expr		{ $$ = AST.NonLeaf(NodeType.Mul, $1.LineNumber, $1, '*', $3); }	
-        |       Expr '/' Expr		{ $$ = AST.NonLeaf(NodeType.Div, $1.LineNumber, $1, '/', $3); }
-        |       Expr '%' Expr		{ $$ = AST.NonLeaf(NodeType.Mod, $1.LineNumber, $1, '%', $3); }
+        |       Expr '>' Expr		{ $$ = AST.NonLeaf(NodeType.GreaterThan, $1.LineNumber, $1, $2, $3); }
+        |       Expr '+' Expr		{ $$ = AST.NonLeaf(NodeType.Add, $1.LineNumber, $1, $2, $3); }
+        |       Expr '-' Expr		{ $$ = AST.NonLeaf(NodeType.Sub, $1.LineNumber, $1, $2, $3); }
+        |       Expr '*' Expr		{ $$ = AST.NonLeaf(NodeType.Mul, $1.LineNumber, $1, $2, $3); }	
+        |       Expr '/' Expr		{ $$ = AST.NonLeaf(NodeType.Div, $1.LineNumber, $1, $2, $3); }
+        |       Expr '%' Expr		{ $$ = AST.NonLeaf(NodeType.Mod, $1.LineNumber, $1, $2, $3); }
         |       UnaryExpr
         ;
 
