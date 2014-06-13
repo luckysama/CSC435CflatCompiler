@@ -45,7 +45,7 @@ public abstract class CbType {
         return (arrayTypes[elt] = new CFArray(elt));
     }
 
-    public abstract void Print(TextWriter p, string prefix="");
+    public abstract void Print(TextWriter p);
 
     // This initialization method is needed to create the type descriptors
     // for classes and methods assumed to be available to Cb programs, and
@@ -87,7 +87,7 @@ public class CFArray: CbType {
         return System.String.Format("{0}[]", ElementType);
     }
     
-    public override void Print(TextWriter p, string prefix="") {
+    public override void Print(TextWriter p) {
         p.Write(this.ToString());
     }
 }
@@ -118,8 +118,12 @@ public class CbClass: CbType {
         return true;
     }
 
-    public override void Print(TextWriter p, string prefix="") {
-        p.Write("\nclass {0}{1} : {2}", prefix, Name, Parent==null? "null" : Parent.Name);
+    public override void Print(TextWriter p) {
+        Print(p, "");
+    }
+
+    public void Print(TextWriter p, string prefix) {
+        p.Write("\nclass {0}.{1} : {2}", prefix, Name, Parent==null? "null" : Parent.Name);
         p.WriteLine(" {");
         
         // output the fields
@@ -136,15 +140,7 @@ public class CbClass: CbType {
             if (cc == null) continue;
             p.Write("    ");
             cc.Print(p);
-        }
-
-        // output the fields
-        foreach( CbMember cm in Members.Values ) {
-            CbField cf = cm as CbField;
-            if (cf == null) continue;
-            p.Write("    ");
-            cf.Print(p);
-        }
+        }       
 
         // output the methods
         foreach( CbMember cm in Members.Values ) {
@@ -171,7 +167,7 @@ public class CbBasic: CbType {
         return Type.ToString().ToLower();
     }
 
-    public override void Print(TextWriter p, string prefix="") {
+    public override void Print(TextWriter p) {
         p.WriteLine(this.ToString());
     }
 }
@@ -231,3 +227,4 @@ public class CbMethod: CbMember {
 }
 
 } // end of namespace FrontEnd
+

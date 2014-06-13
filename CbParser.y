@@ -66,7 +66,7 @@ UsingList:      /* empty */
         ;
 
 ClassList:      ClassDecl
-			    { $$ = AST.Kary(NodeType.ClassList, LineNumber); }
+			    { $$ = AST.Kary(NodeType.ClassList, LineNumber, $1); }
         |       ClassList ClassDecl
 			    { $1.AddChild($2);  $$ = $1; }
         ;
