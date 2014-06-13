@@ -202,7 +202,7 @@ ActPars:        ActPars ',' Expr
         ;
 
 Block:          '{' DeclsAndStmts '}'
-				{ $$ = $1; }
+				{ $$ = $2; }
         ;
 
 LocalDecl:      TypeName IdentList ';'
