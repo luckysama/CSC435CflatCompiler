@@ -53,7 +53,7 @@ namespace FrontEnd
                             {
                                 n[i].Accept(this, data);
                                 CbField field = new CbField(status.Ident, status.InField);
-                                status.InClass.AddMember(field);
+                                CheckSymbolAdd(status.InClass.AddMember(field), n.LineNumber, status.Ident);
                             }
                         }
                         else BypassKary(n, data);
@@ -123,7 +123,7 @@ namespace FrontEnd
                         status.InClass = cls;
                         status.RequestReturn = false;
                         status.InField = null;
-                        NameSpace.TopLevelNames.AddMember(cls);
+                        CheckSymbolAdd(NameSpace.TopLevelNames.AddMember(cls), n.LineNumber, cls.Name);
                         if (n[2] != null) n[2].Accept(this, status);
                         break;
                     }
@@ -160,7 +160,7 @@ namespace FrontEnd
                         //retrieve the identifier
                         n[1].Accept(this, status);
                         CbConst cons = new CbConst(status.Ident, fieldType);
-                        status.InClass.AddMember(cons);
+                        CheckSymbolAdd(status.InClass.AddMember(cons), n.LineNumber, status.Ident);
                         status.RequestReturn = false;
                         status.InConst = null;
                         break;
@@ -184,7 +184,7 @@ namespace FrontEnd
                             new List<CbType>());
                         status.InMethod = method;
                         if (n[3] != null) n[3].Accept(this, data);
-                        status.InClass.AddMember(method);
+                        CheckSymbolAdd(status.InClass.AddMember(method), n.LineNumber, method.Name);
                         status.RequestReturn = false;
                         n[4].Accept(this, data);
                         status.InMethod = null;
@@ -234,6 +234,14 @@ namespace FrontEnd
                 status.IsArray = false;
             }
             return result;
+        }
+
+        private void CheckSymbolAdd(bool addResult, int linenumber, string symbolname)
+        {
+            if (addResult == false)
+            {
+                f.WriteLine("Symbol name conflict. Name:{0}, Line:{1}", symbolname, linenumber);
+            }
         }
 
         private void AddAllSystemTokens()

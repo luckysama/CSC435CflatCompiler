@@ -7,11 +7,19 @@ class List {
 
 class Other: List {
     public char c;
+	public char c; //This is a name conflict and should be reported
     public override void Print() {
         Console.Write(' ');
         Console.Write(c);
         if (next != null) next.Print();
     }
+}
+
+class Other //this is a class name conflict
+{
+public int c;//these are conflicting lines, but should not cause crash
+public override void Print() { }
+public int ShouldNotInSymbolTable; //this symbol should not appear in symbol table, because the class name is conflicting.
 }
 
 class Digit: List {
