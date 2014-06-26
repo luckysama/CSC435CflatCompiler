@@ -9,7 +9,7 @@ using System.Collections.Generic;
 
 DIGIT       [0-9]
 LETTER      [a-zA-Z]
-IDCHAR      [a-zA-z0-9_]
+IDCHAR      [a-zA-Z0-9_]
 WS          [ \t\n\r]
 cChar       [^\'\\\n\r]
 sChar       [^\"\\\n\r]
@@ -24,6 +24,11 @@ opChar      [\-+<>*/%:=;,.\[\]{}()]
     public int LineNumber { get{ return yyline; } }
 
     Tokens t;
+
+    public override void yyerror( string errmsg, params object[] args ) {
+        System.Console.Write("{0}: ", yyline);
+        System.Console.WriteLine(errmsg, args);
+    }
 
     public void TrackTokens( string tfile ) {
         try {
@@ -51,6 +56,7 @@ opChar      [\-+<>*/%:=;,.\[\]{}()]
         keywords["if"] = Tokens.Kwd_if;
         keywords["int"] = Tokens.Kwd_int;
         keywords["new"] = Tokens.Kwd_new;
+        keywords["null"] = Tokens.Kwd_null;
         keywords["override"] = Tokens.Kwd_override;
         keywords["public"] = Tokens.Kwd_public;
         keywords["return"] = Tokens.Kwd_return;

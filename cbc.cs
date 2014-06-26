@@ -1,10 +1,14 @@
 /* cbc.cs
 
-    This will become the main module for invoking each step
-    of the compilation process.
-    Currently, cbc only lexes and parses the input.
+    This is the main module for invoking each step of the compilation process.
+    Currently, cbc performs these actions:
+    * lexes and parses the input
+    * builds the AST
+    * builds a symbol-table of top-level names: for namespaces and classes
 
-    Datea: 2012-2014
+    Author: Nigel Horspool
+    
+    Dates: 2012-2014
 */
 
 using System;
@@ -14,21 +18,50 @@ using FrontEnd;
 
 
 public class Start {
+
+    public static int SemanticErrorCnt = 0;  // count of semantic errors
+    public static int WarningMsgCnt = 0;     // count of warning messages
     
+    // reports a semantic error
+    // if no line number can be associated with the message, 0 should be used
+    public static void SemanticError( int lineNum, string message, params object[] args ) {
+        if (lineNum > 0)
+            Console.Write("{0}: Error: ", lineNum);
+        else
+            Console.Write("*** Error: ");
+        Console.WriteLine(String.Format(message, args));
+        SemanticErrorCnt++;
+    }  
+
+    // outputs a warning message
+    public static void WarningMessage( int lineNum, string message, params object[] args ) {
+        if (lineNum > 0)
+            Console.Write("{0}: Warning: ", lineNum);
+        else
+            Console.Write("*** Warning: ");
+        Console.WriteLine(String.Format(message, args));
+        WarningMsgCnt++;
+    }
+
     static AST DoParse( string filename, bool printTokens ) {
         AST result = null;
-        FileStream src = File.OpenRead(filename);
-        Scanner sc = new Scanner(src);
-        sc.Initialize();
-        if (printTokens)
-            sc.TrackTokens("tokens.txt");
-
-        Parser parser = new Parser(sc);
-    
-        if (parser.Parse())
-            result = parser.Tree;
-
-        sc.CleanUp();
+        try {
+            using (FileStream src = File.OpenRead(filename)) {
+                Scanner sc = new Scanner(src);
+                sc.Initialize();
+                if (printTokens)
+                    sc.TrackTokens("tokens.txt");
+        
+                Parser parser = new Parser(sc);
+            
+                if (parser.Parse())
+                    result = parser.Tree;
+        
+                sc.CleanUp();
+            }
+        } catch( Exception e ) {
+            Console.WriteLine(e.Message);
+        }
         return result;
     }
     
@@ -97,33 +130,51 @@ public class Start {
 
         CbType.Initialize();  // initialize some predefined types and top-level namespace
 
-        // Create and invoke your top-level namespace visitor here
-
-        if (printNS)
-        {
-            TypeVisitor typeVisitor = new TypeVisitor();
-            tree.Accept(typeVisitor, null);
-            NameSpace.Print();
-        }
-
-/*
-        int numErrors;
+        TLVisitor tlv = new TLVisitor();
+        tree.Accept(tlv, NameSpace.TopLevelNames);
         
-        // perform typechecking ...
 
+
+/*      // Tasks for Assignment 3
+        
+        
+        // perform full typechecking plus additional semantic checking ...
+        
+        ... instantiate type-checking visitor(s) and invoke it/them here
+
+        // allow inspection of all the type annotations
         if (printASTtc) {
         	PrVisitor printVisitor = new PrVisitor();
-            tree.Accept(printVisitor);    // print AST with datatype annotations
-        }
-
-		// generate intermediate code
-
-        if (numErrors > 0) {
-            Console.WriteLine("\n{0} errors reported, compilation halted", numErrors);
-            return;
+            tree.Accept(printVisitor);    // print AST with the datatype annotations
         }
 */
 
+        if (printNS)
+            NameSpace.Print();
+
+        if (SemanticErrorCnt > 0) {
+            Console.WriteLine("\n{0} errors reported, no code generated\n", SemanticErrorCnt);
+            return;
+        }
+
+/*      // Tasks for Assignment 4
+
+		// generate intermediate representation (IR) code in LLVM's text formal
+		
+		... instantiate an IR generating visitor and invoke it here
+		
+		// ideally no semantic errors are detected while creating IR code, but in case
+        if (semanticErrorCnt > 0) {
+            Console.WriteLine("\n{0} errors reported\n", semanticErrorCnt);
+            return;
+        }
+
+*/
+
+        // There could be warning messages from any previous stage
+        if (WarningMsgCnt > 0) {
+            Console.WriteLine("\n{0} warning messages generated\n", WarningMsgCnt);
+        }
     }
 
 }

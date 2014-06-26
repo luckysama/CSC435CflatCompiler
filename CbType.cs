@@ -123,16 +123,8 @@ public class CbClass: CbType {
     }
 
     public void Print(TextWriter p, string prefix) {
-        p.Write("\nclass {0}.{1} : {2}", prefix, Name, Parent==null? "null" : Parent.Name);
+        p.Write("\nclass {0}{1} : {2}", prefix, Name, Parent==null? "null" : Parent.Name);
         p.WriteLine(" {");
-        
-        // output the fields
-        foreach( CbMember cm in Members.Values ) {
-            CbField cf = cm as CbField;
-            if (cf == null) continue;
-            p.Write("    ");
-            cf.Print(p);
-        }
 
         // output the constants
         foreach( CbMember cm in Members.Values ) {
@@ -140,7 +132,15 @@ public class CbClass: CbType {
             if (cc == null) continue;
             p.Write("    ");
             cc.Print(p);
-        }       
+        }
+
+        // output the fields
+        foreach( CbMember cm in Members.Values ) {
+            CbField cf = cm as CbField;
+            if (cf == null) continue;
+            p.Write("    ");
+            cf.Print(p);
+        }
 
         // output the methods
         foreach( CbMember cm in Members.Values ) {
@@ -216,13 +216,17 @@ public class CbMethod: CbMember {
     }
 
     public override void Print(TextWriter p) {
-        p.Write("{2}{0} {1}(", ResultType, Name, IsStatic? "static " : "");
-        string s = "";
-        foreach( CbType at in ArgType ) {
-            p.Write("{0}{1}", s, at.ToString());
-            s = ",";
-        }
-        p.WriteLine(")");
+        p.Write("{2}{0} {1}", ResultType, Name, IsStatic? "static " : "");
+        if (ArgType != null) {
+            p.Write("(");
+            string s = "";
+            foreach( CbType at in ArgType ) {
+                p.Write("{0}{1}", s, at.ToString());
+                s = ",";
+            }
+            p.WriteLine(")");
+        } else
+            p.WriteLine();
     }
 }
 

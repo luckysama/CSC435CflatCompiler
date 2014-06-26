@@ -26,6 +26,14 @@ namespace FrontEnd {
             nametable = new Dictionary<string,object>();
         }
         
+        public ICollection<string> Names {
+            get{ return nametable.Keys; }
+        }
+        
+        public ICollection<object> Members {
+            get{ return nametable.Values; }
+        }
+
         // lookup a name in the nametable
         // The result is a reference to a NameSpace or CbClass instance
         // if found, otherwise the result is null
@@ -54,24 +62,30 @@ namespace FrontEnd {
         
         // dump a nested namespace
         public void Print( TextWriter outputStream, string prefix ) {
-            string fullname = prefix != null? prefix + "." + Name : Name;
-            Console.WriteLine("\nNamespace {0}:", fullname);
+            string fullname = prefix + Name;
+            string newPrefix = "";
+            if (Name.Length == 0) {
+                Console.WriteLine("\nNamespace <anonymous>:");
+            } else {
+                Console.WriteLine("\nNamespace {0}:", fullname);
+                newPrefix = fullname + ".";
+            }
             foreach( object m in nametable.Values ) {
                 if (m is NameSpace)
-                    ((NameSpace)m).Print(outputStream, fullname);
+                    ((NameSpace)m).Print(outputStream, newPrefix);
                 else if (m is CbClass)
-                    ((CbClass)m).Print(outputStream, fullname);
+                    ((CbClass)m).Print(outputStream, newPrefix);
             }
         }
 
         // dump all namespaces from top-level down
         public static void Print( TextWriter outputStream ) {
-            TopLevelNames.Print(outputStream, null);
+            TopLevelNames.Print(outputStream, "");
         }
 
         // dump all namespaces from top-level down
         public static void Print() {
-            TopLevelNames.Print(Console.Out, null);
+            TopLevelNames.Print(Console.Out, "");
         }
 
     // ************* static stuff *****************
@@ -83,7 +97,7 @@ namespace FrontEnd {
         static NameSpace() {
             // normally a C# compiler would obtain the names of top-level
             // namespaces from resource files, and then would obtain details
-            // second level namespaces and classes if the C# progran contains
+            // second level namespaces and classes if the C# program contains
             // the appropriate using declaration.
             NameSpace system = new NameSpace("System");
             TopLevelNames.AddMember(system);
