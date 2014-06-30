@@ -135,19 +135,18 @@ public class Start {
         
 
 
-/*      // Tasks for Assignment 3
+      // Tasks for Assignment 3
         
         
         // perform full typechecking plus additional semantic checking ...
         
-        ... instantiate type-checking visitor(s) and invoke it/them here
+        //... instantiate type-checking visitor(s) and invoke it/them here
 
         // allow inspection of all the type annotations
         if (printASTtc) {
         	PrVisitor printVisitor = new PrVisitor();
-            tree.Accept(printVisitor);    // print AST with the datatype annotations
+            tree.Accept(printVisitor, 0);    // print AST with the datatype annotations
         }
-*/
 
         if (printNS)
             NameSpace.Print();
