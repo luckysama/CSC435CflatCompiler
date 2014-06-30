@@ -170,12 +170,12 @@ namespace FrontEnd
                         TravelStatus status = (TravelStatus)(data);
                         //retrieve the method attr
                         status.RequestReturn = true;
-                        n[0].Accept(this, data);
+                        if (n[4] != null)  n[4].Accept(this, data);
                         //retrieve the method rt type
                         n[1].Accept(this, data);
                         CbType rtType = DetermineType(status);
                         //retrieve the method name
-                        n[2].Accept(this, data);
+                        n[1].Accept(this, data);
                         string methodname = status.Ident;
                         //Create the method and dispatch to the formal list
                         CbMethod method = new CbMethod(methodname,

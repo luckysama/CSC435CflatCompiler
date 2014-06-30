@@ -130,9 +130,10 @@ public class Start {
 
         CbType.Initialize();  // initialize some predefined types and top-level namespace
 
-        TLVisitor tlv = new TLVisitor();
-        tree.Accept(tlv, NameSpace.TopLevelNames);
-        
+        //TLVisitor tlv = new TLVisitor();
+        //tree.Accept(tlv, NameSpace.TopLevelNames);
+        TypeVisitor typevisitor = new TypeVisitor();
+        tree.Accept(typevisitor, null);
 
 
       // Tasks for Assignment 3
