@@ -19,7 +19,6 @@ namespace FrontEnd
         {
             switch (n.Tag)
             {
-
                 default:
                     {
                         BypassKary(n, data); break;
@@ -84,6 +83,17 @@ namespace FrontEnd
                         CbMethod methodthis = ClassContext.Members[mid.Sval] as CbMethod;
                         Debug.Assert(methodthis != null);
                         methodthis.ResultType = returnType;
+                        //Parse the parameter list
+                        status.InMethod = methodthis;
+                        BypassNonleaf(n, status);
+                        status.InMethod = null;
+                        break;
+                    }
+                case NodeType.Formal:
+                    {
+                        Debug.Assert(status.InMethod != null);
+                        CbType type = ParseCompositeType(n[0]);
+                        status.InMethod.ArgType.Add(type);
                         break;
                     }
                 default:
@@ -149,6 +159,7 @@ namespace FrontEnd
         private class TravelStatus
         {
             public CbClass InClass;
+            public CbMethod InMethod;
         }
     }
 

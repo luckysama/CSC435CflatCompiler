@@ -255,7 +255,11 @@ public class CbMethod: CbMember {
 
     public CbMethod( string nm, bool isStatic, CbType rt, IList<CbType> argType ) {
        Name = nm;  IsStatic = isStatic;
-       ResultType = rt; ArgType = argType;
+        ResultType = rt; ArgType = argType;
+        if (ArgType == null)
+        {
+            ArgType = new List<CbType>();
+        }
     }
 
     public override void Print(TextWriter p) {
