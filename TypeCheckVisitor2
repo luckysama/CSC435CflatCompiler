@@ -1,6 +1,3 @@
-/*  CbTypeCheckVisitor2.cs
-
-    Second stage of full type-checking on AST
 
     We now visit and type-check all the parts of the AST which were not
     checked in the first stage of full type-checking.
@@ -33,6 +30,10 @@ public class TypeCheckVisitor2: Visitor {
         loopNesting = 0;
     }
     
+		
+	public void complain(int line_number, string message) {
+    	System.Console.WriteLine("Error["+line_number+"]: "+message);
+  	}
     // Note: the data parameter for the Visit methods is never used
     // It is always null (or whatever is passed on the initial call)
 
@@ -131,12 +132,16 @@ public class TypeCheckVisitor2: Visitor {
             break;
         case NodeType.If:
             node[0].Accept(this,data);
-            /* TODO ... check type */
+			if (node[0].Tag != NodeType.IntType)
+				Start.SemanticError(node.LineNumber, String.Format("If statement conditional must evaluate to type int not {0}",node[0].Tag));
+			/* TODO ... check type */
             node[1].Accept(this,data);
             node[2].Accept(this,data);
             break;
         case NodeType.While:
             node[0].Accept(this,data);
+			if (node[0].Tag != NodeType.IntType)
+				Start.SemanticError(node.LineNumber, String.Format("While statement condition must evaluate to type int not {0}",node[0].Tag));
             /* TODO ... check type */
             loopNesting++;
             node[1].Accept(this,data);
@@ -149,12 +154,21 @@ public class TypeCheckVisitor2: Visitor {
                 break;
             }
             node[0].Accept(this,data);
+			//TODO: Incompatible types, use switch statement?
+			/*if (node[0].Tag != currentMethod.ResultType)
+				Start.SemanticError(node.LineNumber, String.Format("expected return type of {0} but got {1}",currentMethod.ResultType,node[0].Tag));	*/
             /* TODO ... check type of method result */
             break;
         case NodeType.Call:
             node[0].Accept(this,data); // method name (could be a dotted expression)
             node[1].Accept(this,data); // actual parameters
             /* TODO ... check types */
+			SymTabEntry symbol = sy.LookUp(node[0].ToString());
+			if (symbol == null) {
+				complain(node.LineNumber,"unknown method name'"+node[0].ToString()+"'");
+				node.Type = CbType.Error;
+				return;
+			}
             node.Type = CbType.Error;  // FIX THIS
             break;
         case NodeType.Dot:
@@ -409,6 +423,8 @@ public class TypeCheckVisitor2: Visitor {
            Otherwise, currentMethod must be flagged as override (not virtual).
         */
     }
+}
+
 }
 
 }
