@@ -7,6 +7,9 @@
     Dates: 2012-2014
 */
 
+//Change by lucky: link all newly created types onto the AST tree, 
+//so we don't need search again in namespace!!!
+
 using System;
 using System.IO;
 using System.Collections.Generic;
@@ -84,12 +87,12 @@ public class TLVisitor: Visitor {
             string parentName = parentClassId == null? null : parentClassId.Sval;
             AST_kary memberList = node[2] as AST_kary;
             object ctd = ns.LookUp(className);
-            //Debug.Assert(ctd is CbClass); ??
+            //Debug.Assert((ctd == null) || (ctd is CbClass));
             CbClass classTypeDefn = (CbClass)ctd;
             CbClass parentTypeDefn = null;
             if (parentName != null) {
                 object ptd = ns.LookUp(parentName);
-                Debug.Assert(ptd is CbClass);
+                //Debug.Assert(ptd is CbClass);
                 parentTypeDefn = (CbClass)ptd;
                 if (parentTypeDefn == null) {
                     pendingClassDefns[parentName] = node;
@@ -107,6 +110,7 @@ public class TLVisitor: Visitor {
             } else {
                 classTypeDefn = new CbClass(className, parentTypeDefn);
                 ns.AddMember(classTypeDefn);
+                node.Type = classTypeDefn;
                 if (pendingClassDefns.ContainsKey(className)) {
                     pendingClassDefns.Remove(className);
                 }

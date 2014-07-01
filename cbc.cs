@@ -130,10 +130,12 @@ public class Start {
 
         CbType.Initialize();  // initialize some predefined types and top-level namespace
 
-        //TLVisitor tlv = new TLVisitor();
-        //tree.Accept(tlv, NameSpace.TopLevelNames);
-        TypeVisitor typevisitor = new TypeVisitor();
-        tree.Accept(typevisitor, null);
+        //Nigel's code: fill in top level names
+        TLVisitor tlv = new TLVisitor();
+        tree.Accept(tlv, NameSpace.TopLevelNames);
+        //First pass: fill in member types (no look at method body
+        TypeFiller typeFiller = new TypeFiller(NameSpace.TopLevelNames);
+        tree.Accept(typeFiller, null);
 
 
       // Tasks for Assignment 3
