@@ -86,6 +86,7 @@ namespace FrontEnd
                         //Parse the parameter list
                         status.InMethod = methodthis;
                         BypassNonleaf(n, status);
+                        n.Type = returnType;
                         status.InMethod = null;
                         break;
                     }
