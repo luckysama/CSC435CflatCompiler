@@ -255,6 +255,11 @@ public class TypeCheckVisitor2: Visitor {
             node[0].Accept(this,data);
             node[1].Accept(this,data);
             ///////////////////////////
+            if (node[0].Type == null)
+            {
+                Start.SemanticError(node[0].LineNumber, "Unrecognized array type.");
+                break;
+            }
             if (node[1].Type != CbType.Int)
                 Start.SemanticError(node[1].LineNumber, "new expression must have int as array size.");
             node.Type = CbType.Array(node[0].Type);
