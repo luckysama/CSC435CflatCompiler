@@ -95,6 +95,7 @@ namespace FrontEnd
                         Debug.Assert(status.InMethod != null);
                         CbType type = ParseCompositeType(n[0]);
                         status.InMethod.ArgType.Add(type);
+                        n.Type = type;
                         break;
                     }
                 default:
@@ -133,27 +134,31 @@ namespace FrontEnd
             {
                 CbType innerType = ParseCompositeType(ast[0]);
                 CFArray arrayWarp = new CFArray(innerType);
+                ast.Type = arrayWarp;
                 return arrayWarp;
             } else
             {
+                CbType thisType = null;
                 switch (ast.Tag)
                 {
-                    case NodeType.IntType: return CbType.Int;
-                    case NodeType.StringType: return CbType.String;
-                    case NodeType.CharType: return CbType.Char;
-                    case NodeType.VoidType: return CbType.Void;
+                    case NodeType.IntType: thisType = CbType.Int; break;
+                    case NodeType.StringType: thisType = CbType.String; break;
+                    case NodeType.CharType: thisType = CbType.Char; break;
+                    case NodeType.VoidType: thisType = CbType.Void; break;
                     case NodeType.Ident:
                         {
                             AST_leaf identifier = ast as AST_leaf;
-                            CbType typethis = tpNs.LookUp(identifier.Sval) as CbType;
-                            Debug.Assert(typethis != null);
-                            return typethis;
+                            thisType = tpNs.LookUp(identifier.Sval) as CbType;
+                            Debug.Assert(thisType != null);
+                            break;
                         }
                     default:
                         {
                             throw new Exception("Unexcepted tag in type parsing.");
                         }
                 }
+                ast.Type = thisType;
+                return thisType;
             }
         }
         

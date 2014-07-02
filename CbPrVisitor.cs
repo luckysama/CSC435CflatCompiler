@@ -40,6 +40,7 @@ public class PrVisitor: Visitor {
         f.Write("{0}{1}: {2}  [line {3}]", indentString(indent), cn, node.Tag, node.LineNumber);
         if (node.Type != null)
             f.Write(", type {0}", node.Type);
+        else f.Write(", type N.A");
     }
 
 	public override void Visit(AST_kary node, object data) {

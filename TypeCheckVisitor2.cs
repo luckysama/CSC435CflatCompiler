@@ -1,4 +1,4 @@
-
+/*
     We now visit and type-check all the parts of the AST which were not
     checked in the first stage of full type-checking.
     
@@ -9,6 +9,7 @@
 
 using System;
 using System.IO;
+using System.Text;
 using System.Collections.Generic;
 using System.Diagnostics;
 
@@ -155,20 +156,23 @@ public class TypeCheckVisitor2: Visitor {
             }
             node[0].Accept(this,data);
 			//TODO: Incompatible types, use switch statement?
-			/*if (node[0].Tag != currentMethod.ResultType)
-				Start.SemanticError(node.LineNumber, String.Format("expected return type of {0} but got {1}",currentMethod.ResultType,node[0].Tag));	*/
+			if (node[0].Type != currentMethod.ResultType)
+				Start.SemanticError(node.LineNumber, String.Format("expected return type of {0} but got {1}",currentMethod.ResultType,node[0].Tag));	
             /* TODO ... check type of method result */
             break;
         case NodeType.Call:
             node[0].Accept(this,data); // method name (could be a dotted expression)
             node[1].Accept(this,data); // actual parameters
             /* TODO ... check types */
-			SymTabEntry symbol = sy.LookUp(node[0].ToString());
+            /*
+            string methodname = node[0].ToString();
+			SymTabEntry symbol = sy.LookUp(methodname);
 			if (symbol == null) {
-				complain(node.LineNumber,"unknown method name'"+node[0].ToString()+"'");
+				Start.SemanticError(node.LineNumber,String.Format("unknown method name'"
+                    + methodname + "'"));
 				node.Type = CbType.Error;
 				return;
-			}
+			} */
             node.Type = CbType.Error;  // FIX THIS
             break;
         case NodeType.Dot:
@@ -229,31 +233,57 @@ public class TypeCheckVisitor2: Visitor {
         case NodeType.NewArray:
             node[0].Accept(this,data);
             node[1].Accept(this,data);
-            /* TODO ... check types */
+            ///////////////////////////
+            if (node[1].Type != CbType.Int)
+                Start.SemanticError(node[1].LineNumber, "new expression must have int as array size.");
             node.Type = CbType.Array(node[0].Type);
             break;
         case NodeType.NewClass:
             node[0].Accept(this,data);
             /* TODO ... check that operand is a class */
+            if (!(node[0].Type is CbClass))
+                Start.SemanticError(node[0].LineNumber, "The specified type in new expression is not a class.");
             node.Type = node[0].Type;
             break;
         case NodeType.PlusPlus:
         case NodeType.MinusMinus:
             node[0].Accept(this,data);
             /* TODO ... check types and operand must be a variable */
-            node.Type = node[0].Type;
+            if (node[0].Kind != CbKind.Variable)
+            {
+                Start.SemanticError(node[0].LineNumber, "The identifier in the expression is not a variable (plusplus minusminus).");
+            } else if (node[0].Type != CbType.Int)
+            {
+                Start.SemanticError(node[0].LineNumber, "The variable is not of int type (for plusplus and minusminus operator).");
+            }
+            node.Type = CbType.Int;
             break;
         case NodeType.UnaryPlus:
         case NodeType.UnaryMinus:
             node[0].Accept(this,data);
             /* TODO ... check types */
+            if (node[0].Kind != CbKind.Variable)
+            {
+                Start.SemanticError(node[0].LineNumber, "The identifier in the expression is not a variable (unary operator).");
+            }
+            else if (node[0].Type != CbType.Int)
+            {
+                Start.SemanticError(node[0].LineNumber, "The variable is not of int type (for unary operator).");
+            }
             node.Type = CbType.Int;
             break;
         case NodeType.Index:
             node[0].Accept(this,data);
             node[1].Accept(this,data);
             /* TODO ... check types */
-            node.Type = CbType.Error;  // FIX THIS
+            if (node[0].Kind != CbKind.Variable)
+            {
+                Start.SemanticError(node[0].LineNumber, "The identifier in the expression is not a variable (Index).");
+            } else if (!(node[0].Type is CFArray) || (node[0].Type == CbType.String))
+            {
+                Start.SemanticError(node[0].LineNumber, "The variable being indexed is not of array or string type (index).");
+            }
+            node.Type = node[0].Type;  // FIX THIS
             break;
         case NodeType.Add:
         case NodeType.Sub:
@@ -263,7 +293,13 @@ public class TypeCheckVisitor2: Visitor {
             node[0].Accept(this,data);
             node[1].Accept(this,data);
             /* TODO ... check types */
-            node.Type = CbType.Error;  // FIX THIS
+            //lucky: we really can only do int with these, 
+            //because Cb has no float
+            if (node[0].Type != CbType.Int || node[1].Type != CbType.Int)
+            {
+                Start.SemanticError(node[0].LineNumber, "Arithematics can only be done on int types.");
+            } 
+            node.Type = CbType.Int;  // FIX THIS
             break;
         case NodeType.Equals:
         case NodeType.NotEquals:
@@ -271,6 +307,10 @@ public class TypeCheckVisitor2: Visitor {
             node[1].Accept(this,data);
             node.Type = CbType.Bool;           
             /* TODO ... check types */
+            if (node[0].Type != node[1].Type)
+            {
+                Start.SemanticError(node[0].LineNumber, "The two operands of the comparsion is of different type (equality).");          
+            }
             break;
         case NodeType.LessThan:
         case NodeType.GreaterThan:
@@ -280,12 +320,20 @@ public class TypeCheckVisitor2: Visitor {
             node[1].Accept(this,data);
             node.Type = CbType.Bool;
             /* TODO ... check types */
+            if (node[0].Type != CbType.Int || node[1].Type != CbType.Int)
+            {
+                Start.SemanticError(node[0].LineNumber, "Only integer could be compared (in-equality).");
+            }
             break;
         case NodeType.And:
         case NodeType.Or:
             node[0].Accept(this,data);
             node[1].Accept(this,data);
             /* TODO ... check types */
+            if ((node[0].Type != CbType.Bool) || (node[1].Type != CbType.Bool))
+            {
+                Start.SemanticError(node[0].LineNumber, "The operands for a boolean operation must also be of boolean type (and or).");
+            }
             node.Type = CbType.Bool;
             break;
         default:
@@ -363,6 +411,35 @@ public class TypeCheckVisitor2: Visitor {
            contains a cycle.
            The lineNumber parameter is used in error messages.
         */
+        //Lucky: Travel on c's parent path and record what we see alone the way
+        List<CbClass> InheritingPath = new List<CbClass>();
+        CbClass ptr = c;
+        do
+        {
+            InheritingPath.Add(ptr);
+            ptr = ptr.Parent;
+            if (ptr == CbType.Object)
+            {
+                //success
+                break;
+            }
+            
+            if (ptr == null)
+            { 
+                //fail
+                Start.SemanticError(lineNumber, "Class inheriting path broken.");
+                break;
+            }
+
+            foreach (CbClass ancestor in InheritingPath)
+            {
+                if (ptr == ancestor)
+                {
+                    Start.SemanticError(lineNumber, "Circlar inhertance detected.");
+                    break;
+                }
+            }
+        } while (true);
     }
     
     private bool isAssignmentCompatible(CbType dest, CbType src) {
@@ -423,8 +500,16 @@ public class TypeCheckVisitor2: Visitor {
            Otherwise, currentMethod must be flagged as override (not virtual).
         */
     }
+
+    private string printTagToStr(AST node)
+    {      
+        StringBuilder builder = new StringBuilder();
+        StringWriter writer = new StringWriter(builder);
+        writer.Write("{0}:{1}_{2}", node.Tag, node.LineNumber, node.Type);
+        return builder.ToString();
+    }
 }
 
 }
 
-}
+

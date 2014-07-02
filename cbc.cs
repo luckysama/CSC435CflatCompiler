@@ -133,19 +133,16 @@ public class Start {
         //Nigel's code: fill in top level names
         TLVisitor tlv = new TLVisitor();
         tree.Accept(tlv, NameSpace.TopLevelNames);
+      
+        //Assignment 3
         //First pass: fill in member types (no look at method body
         TypeFiller typeFiller = new TypeFiller(NameSpace.TopLevelNames);
         tree.Accept(typeFiller, null);
-
-
-      // Tasks for Assignment 3
-        
-        
-        // perform full typechecking plus additional semantic checking ...
-        
-        //... instantiate type-checking visitor(s) and invoke it/them here
-
-        // allow inspection of all the type annotations
+        //Final pass: using Nigel's example code and fill in stuff
+        TypeCheckVisitor2 type2 = new TypeCheckVisitor2();
+        tree.Accept(type2, null);
+ 
+      
         if (printASTtc) {
         	PrVisitor printVisitor = new PrVisitor();
             tree.Accept(printVisitor, 0);    // print AST with the datatype annotations
