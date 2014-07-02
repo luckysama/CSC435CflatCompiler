@@ -133,16 +133,18 @@ public class TypeCheckVisitor2: Visitor {
             break;
         case NodeType.If:
             node[0].Accept(this,data);
-			if (node[0].Tag != NodeType.IntType)
-				Start.SemanticError(node.LineNumber, String.Format("If statement conditional must evaluate to type int not {0}",node[0].Tag));
-			/* TODO ... check type */
+		CbType nodeType_If = node[0].Type;
+		if (nodeType_If != CbType.Int)
+			Start.SemanticError(node.LineNumber,"If statement conditional must evaluate to type int not {0}",nodeType_If.ToString());
+		/* TODO ... check type */
             node[1].Accept(this,data);
             node[2].Accept(this,data);
             break;
         case NodeType.While:
             node[0].Accept(this,data);
-			if (node[0].Tag != NodeType.IntType)
-				Start.SemanticError(node.LineNumber, String.Format("While statement condition must evaluate to type int not {0}",node[0].Tag));
+		CbType nodeType_While = node[0].Type;
+		if (nodeType_While != CbType.Int)
+			Start.SemanticError(node.LineNumber,"While statement condition must evaluate to type int not {0}",nodeType_While.ToString());
             /* TODO ... check type */
             loopNesting++;
             node[1].Accept(this,data);
@@ -164,16 +166,35 @@ public class TypeCheckVisitor2: Visitor {
             node[0].Accept(this,data); // method name (could be a dotted expression)
             node[1].Accept(this,data); // actual parameters
             /* TODO ... check types */
-            /*
-            string methodname = node[0].ToString();
-			SymTabEntry symbol = sy.LookUp(methodname);
-			if (symbol == null) {
-				Start.SemanticError(node.LineNumber,String.Format("unknown method name'"
-                    + methodname + "'"));
-				node.Type = CbType.Error;
-				return;
-			} */
-            node.Type = CbType.Error;  // FIX THIS
+		SymTabEntry symbol = sy.LookUp(((AST_leaf)node[0]).Sval);
+		if (symbol == null) {
+			complain(node.LineNumber,"unknown method name'"+((AST_leaf)node[0]).Sval+"'");
+			node.Type = CbType.Error;
+			return;
+		}
+		List<CbType> arg_ts = new List<CbType>();
+		AST_kary meth_params = (AST_kary)node[0];
+		for(int i=0; i < meth_params.NumChildren; i++) {
+			if(meth_params[i] == null)
+				Start.SemanticError(node.LineNumber,"Call argument is null");
+			arg_ts.Add(meth_params[i].Type);
+		}
+		//CbType sym_t = symbol.Type;
+		//TODO: How Do I use the above to double check tag is a method in the symbol table
+		/*if (NodeType.Method != node[0].Tag) {
+			complain(node.LineNumber,"'"+(((AST_leaf)node[0]).Sval)+" is not a method, has type: "+sym_t);
+			node.Type = CbType.Error;
+			return;
+		} */
+		CbMethodType meth = symbol.Type as CbMethodType;
+		IList<CbType> args1_type = (IList<CbType>)meth.Method.ArgType.OrderBy(t=>t);
+		IList<CbType> args2_type = (IList<CbType>)arg_ts.OrderBy(t=>t);
+		if(! args1_type.SequenceEqual(args2_type)) {
+			string arg_s = arg_ts.ToString(); 
+			complain(node.LineNumber,"incompatible method arguments: " + arg_s);
+		} else {
+			node.Type = meth.Method.ResultType;
+		}
             break;
         case NodeType.Dot:
             node[0].Accept(this,data);
