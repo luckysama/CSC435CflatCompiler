@@ -14,6 +14,8 @@ class Foo {
         f = new Bar();
         int r;
         r = f.Umm(3,4);
+		r = f.Ummm(3,4);
+		r = f.Ummm(3,4,5);//should have a parameter list un-match
     }
 
     public virtual int Ummm( int a, int b ) {
