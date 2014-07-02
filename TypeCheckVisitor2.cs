@@ -159,7 +159,7 @@ public class TypeCheckVisitor2: Visitor {
             node[0].Accept(this,data);
 			//TODO: Incompatible types, use switch statement?
 			if (node[0].Type != currentMethod.ResultType)
-				Start.SemanticError(node.LineNumber, String.Format("expected return type of {0} but got {1}",currentMethod.ResultType,node[0].Tag));	
+				Start.SemanticError(node.LineNumber, String.Format("expected return type of {0} but got {1}",currentMethod.ResultType.ToString(),node[0].Type.ToString()));	
             /* TODO ... check type of method result */
             break;
         case NodeType.Call:
