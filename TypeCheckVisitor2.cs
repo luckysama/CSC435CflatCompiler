@@ -488,17 +488,29 @@ public class TypeCheckVisitor2: Visitor {
 		checkTypeSyntax(n[0]);
 	} else {
 		CbType thisType = null;
-		List<NodeType> accept_T = new List<NodeType>{NodeType.IntType,NodeType.StringType,NodeType.CharType,NodeType.VoidType};
-		if (!(accept_T.Contains(n.Tag))) {
-			if (n.Tag == NodeType.Ident) {
-				AST_leaf identifier = n as AST_leaf;
-				thisType = ns.LookUp(identifier.Sval) as CbType;
-				if (thisType == null) 
-					Start.SemanticError(n.LineNumber,"unrecognized identifier {0}",identifier.Sval);
-			} else {
-				Start.SemanticError(n.LineNumber,"Unexpected type in AST, {0}",n.Tag.ToString());
+		switch(n.Tag) {
+			case NodeType.IntType: n.Type = CbType.Int; break;
+			case NodeType.StringType: n.Type = CbType.String; break;
+			case NodeType.CharType: n.Type = CbType.Char; break;
+			case NodeType.VoidType: n.Type = CbType.Void; break;
+			case NodeType.Ident:
+			{
+			    AST_leaf identifier = n as AST_leaf;
+			    thisType = ns.LookUp(identifier.Sval) as CbType;
+			    if (thisType == null) {
+			    	    Start.SemanticError(n.LineNumber,"unrecognized identifier {0}",identifier.Sval);
+			    	    n.Type = CbType.Error;
+			    } else {
+			    	    n.Type = thisType;
+			    }
+			    break;
 			}
-		}
+			default:
+			{
+			    throw new Exception("Unexcepted tag in type parsing.");
+			    n.Type = CbType.Error;
+			}
+		}					
 	}
         /* TODO
            code to check whether n is the subtree that has appropriate AST
