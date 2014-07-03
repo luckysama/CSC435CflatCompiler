@@ -55,6 +55,7 @@ namespace FrontEnd
                         CbConst thisConst = (CbConst)ClassContext.Members[cid_str];
                         Debug.Assert(thisConst != null);
                         thisConst.Type = thistype;
+                        thisConst.LineNumber = n.LineNumber;
                         break;
                     }
                 case NodeType.Field:
@@ -68,6 +69,7 @@ namespace FrontEnd
                             string id_str = id.Sval;
                             CbField fieldthis = ClassContext.Members[id_str] as CbField;
                             fieldthis.Type = thistype;
+                            fieldthis.LineNumber = n.LineNumber;
                         }
                             break;
                     }
@@ -83,6 +85,7 @@ namespace FrontEnd
                         CbMethod methodthis = ClassContext.Members[mid.Sval] as CbMethod;
                         Debug.Assert(methodthis != null);
                         methodthis.ResultType = returnType;
+                        methodthis.LineNumber = n.LineNumber;
                         //Parse the parameter list
                         status.InMethod = methodthis;
                         BypassNonleaf(n, status);

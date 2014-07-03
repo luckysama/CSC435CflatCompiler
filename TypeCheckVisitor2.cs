@@ -32,10 +32,10 @@ public class TypeCheckVisitor2: Visitor {
         loopNesting = 0;
     }
     
-		
+	/*	
 	public void complain(int line_number, string message) {
     	System.Console.WriteLine("Error["+line_number+"]: "+message);
-  	}
+  	}*/
     // Note: the data parameter for the Visit methods is never used
     // It is always null (or whatever is passed on the initial call)
 
@@ -79,13 +79,20 @@ public class TypeCheckVisitor2: Visitor {
             string className = classNameId.Sval;
             currentClass = ns.LookUp(className) as CbClass;
             Debug.Assert(currentClass != null);
-            performParentCheck(currentClass,node.LineNumber);  // check Object is ultimate ancestor
+            bool parentStructure = performParentCheck(currentClass,node.LineNumber);  // check Object is ultimate ancestor
+            if (parentStructure == true)
+            { 
+                BindingAllMemberIdentifier(currentClass); //binding all class's known fields to sy
+            } 
+            sy.Enter();
             // now check the class's members
             AST_kary memberList = node[2] as AST_kary;
             for(int i=0; i<memberList.NumChildren; i++) {
                 memberList[i].Accept(this,data);
             }
             currentClass = null;
+            sy.Exit();
+            sy.Empty();//we have no global variables, class exit means no variable available
             break;
         case NodeType.Const:
             node[2].Accept(this,data);  // get type of value
@@ -98,7 +105,7 @@ public class TypeCheckVisitor2: Visitor {
             // get the method's type description
             string methname = ((AST_leaf)(node[1])).Sval;
             currentMethod = currentClass.Members[methname] as CbMethod;
-            sy.Empty();
+            sy.Enter();
             // add each formal parameter to the symbol table
             AST_kary formals = (AST_kary)node[2];
             for(int i=0; i<formals.NumChildren; i++) {
@@ -107,12 +114,12 @@ public class TypeCheckVisitor2: Visitor {
                 SymTabEntry newBinding = sy.Binding(name, formal[1].LineNumber);
                 newBinding.Type = formal[0].Type;
             }
-            sy.Enter();
             // now type-check the method body
             node[3].Accept(this,data);
             // finally check that static/virtual/override are used correctly
             checkOverride(node);
             currentMethod = null;
+            sy.Exit();
             break;
         case NodeType.LocalDecl:
             node[0].Accept(this,data);  // get type for the locals
@@ -254,7 +261,7 @@ public class TypeCheckVisitor2: Visitor {
                 Start.SemanticError(node[0].LineNumber, "The identifier in the expression is not a variable (plusplus minusminus).");
             } else if (node[0].Type != CbType.Int && node[0].Type != CbType.Error)
             {
-                Start.SemanticError(node[0].LineNumber, "The variable is not of int type (for plusplus and minusminus operator).");
+                Start.SemanticError(node[0].LineNumber, "The variable is not of int type but of type {0} (for plusplus and minusminus operator).", node[0].Type);
             }
             node.Type = CbType.Int;
             break;
@@ -268,7 +275,7 @@ public class TypeCheckVisitor2: Visitor {
             }
             else if (node[0].Type != CbType.Int && node[0].Type != CbType.Error)
             {
-                Start.SemanticError(node[0].LineNumber, "The variable is not of int type (for unary operator).");
+                Start.SemanticError(node[0].LineNumber, "The variable is not of int type but of type {0} (for unary operator).", node[0].Type);
             }
             node.Type = CbType.Int;
             break;
@@ -283,7 +290,7 @@ public class TypeCheckVisitor2: Visitor {
             {
                 if (!(node[0].Type == CbType.Error))
                 {
-                    Start.SemanticError(node[0].LineNumber, "The variable being indexed is not of array or string type (index).");
+                    Start.SemanticError(node[0].LineNumber, "The variable being indexed is not of array or string type (Index).");
                     //What's being indexed? we have no idea, must propgate this error
                     node.Type = CbType.Error;
                     break;
@@ -296,7 +303,7 @@ public class TypeCheckVisitor2: Visitor {
             else node.Type = (node[0].Type as CFArray).ElementType;  // FIX THIS
             if (node[1].Type != CbType.Int && node[1].Type != CbType.Error)
             {
-                Start.SemanticError(node[0].LineNumber, "The index subscript must be of int type.");
+                Start.SemanticError(node[0].LineNumber, "The index subscript must be of int type, but get type {0}", node[1].Type);
             }
             break;
         case NodeType.Add:
@@ -314,7 +321,12 @@ public class TypeCheckVisitor2: Visitor {
             {
                 if (!(node[0].Type == CbType.Error || node[1].Type == CbType.Error))
                 {
-                    Start.SemanticError(node[0].LineNumber, "Arithematics can only be done on int types.");
+                    string msg = "Arithematics can only be done on int types. ";
+                    if (node[0].Type != CbType.Int)
+                        msg += String.Format("First operand is of type {0}. ", node[0].Type);
+                    if (node[1].Type != CbType.Int)
+                        msg += String.Format("Second operand is of type {0}. ", node[1].Type);
+                    Start.SemanticError(node[0].LineNumber, msg);
                 }                
             } 
             node.Type = CbType.Int;  // FIX THIS
@@ -329,7 +341,7 @@ public class TypeCheckVisitor2: Visitor {
             {
                 if (!(node[0].Type == CbType.Error || node[1].Type == CbType.Error))
                 {
-                    Start.SemanticError(node[0].LineNumber, "The two operands of                  the comparsion is of different type (equality).");
+                    Start.SemanticError(node[0].LineNumber, "The two operands of                  the comparsion is of different type (equality). The first operand is of type {0} and the second operand is of type {1}.", node[0].Type, node[1].Type);
                 }
             }
             break;
@@ -345,7 +357,12 @@ public class TypeCheckVisitor2: Visitor {
             {
                 if (!(node[0].Type == CbType.Error || node[1].Type == CbType.Error))
                 {
-                    Start.SemanticError(node[0].LineNumber, "Only integer could be compared (in-equality).");
+                    string msg = "Only integer could be compared (in-equality). ";
+                    if (node[0].Type != CbType.Int)
+                        msg += String.Format("First operand is of type {0}. ", node[0].Type);
+                    if (node[1].Type != CbType.Int)
+                        msg += String.Format("Second operand is of type {0}. ", node[1].Type);
+                    Start.SemanticError(node[0].LineNumber, msg);
                 }
             }
             break;
@@ -358,7 +375,12 @@ public class TypeCheckVisitor2: Visitor {
             {
                 if (!(node[0].Type == CbType.Error || node[1].Type == CbType.Error))
                 {
-                    Start.SemanticError(node[0].LineNumber, "The operands for a boolean operation must also be of boolean type (and or).");
+                    string msg = "The operands for a boolean operation must also be of boolean type (and or). ";
+                    if (node[0].Type != CbType.Bool)
+                        msg += String.Format("First operand is of type {0}. ", node[0].Type);
+                    if (node[1].Type != CbType.Bool)
+                        msg += String.Format("Second operand is of type {0}. ", node[1].Type);
+                    Start.SemanticError(node[0].LineNumber, msg);
                 }
             }
             node.Type = CbType.Bool;
@@ -431,7 +453,7 @@ public class TypeCheckVisitor2: Visitor {
         }
     }
 
-    private void performParentCheck(CbClass c, int lineNumber) {
+    private bool performParentCheck(CbClass c, int lineNumber) {
         /* TODO
            code to check that c's ultimate ancestor is Object.
            Be careful not to get stuck if the parent relationship
@@ -448,14 +470,14 @@ public class TypeCheckVisitor2: Visitor {
             if (ptr == CbType.Object)
             {
                 //success
-                break;
+                return true;
             }
             
             if (ptr == null)
             { 
                 //fail
                 Start.SemanticError(lineNumber, "Class inheriting path broken.");
-                break;
+                return false;
             }
 
             foreach (CbClass ancestor in InheritingPath)
@@ -463,7 +485,7 @@ public class TypeCheckVisitor2: Visitor {
                 if (ptr == ancestor)
                 {
                     Start.SemanticError(lineNumber, "Circlar inhertance detected.");
-                    break;
+                    return false;
                 }
             }
         } while (true);
@@ -486,6 +508,10 @@ public class TypeCheckVisitor2: Visitor {
     private void checkTypeSyntax(AST n) {
 	if (n.Tag == NodeType.Array) {
 		checkTypeSyntax(n[0]);
+        if (n[0].Type != CbType.Error)
+            n.Type = new CFArray(n[0].Type);
+        else
+            n.Type = CbType.Error;
 	} else {
 		CbType thisType = null;
 		switch(n.Tag) {
@@ -507,8 +533,9 @@ public class TypeCheckVisitor2: Visitor {
 			}
 			default:
 			{
-			    throw new Exception("Unexcepted tag in type parsing.");
-			    n.Type = CbType.Error;
+                n.Type = CbType.Error;
+                Start.SemanticError(n.LineNumber, "Unexcepted tag in type parsing!");
+                break;
 			}
 		}					
 	}
@@ -653,6 +680,33 @@ public class TypeCheckVisitor2: Visitor {
         ast.Type = method.ResultType;
     }
    
+    private void BindingAllMemberIdentifier(CbClass classContext)
+    {
+        while (classContext != CbType.Object)
+        {
+            foreach (KeyValuePair<string, CbMember> memberPair in classContext.Members)
+            {
+                CbMember member = memberPair.Value;
+                if (member is CbConst)
+                { 
+                    CbConst constMember = member as CbConst;
+                    SymTabEntry entry = sy.Binding(constMember.Name, constMember.LineNumber);
+                    entry.Type = constMember.Type;
+                    entry.IsConst = true;
+                    entry.IsStatic = true;//constMember.IsStatic;
+                }   
+
+                if (member is CbField)
+                {
+                    CbField fieldMember = member as CbField;
+                    SymTabEntry entry = sy.Binding(fieldMember.Name, fieldMember.LineNumber);
+                    entry.Type = fieldMember.Type;
+                    entry.IsStatic = fieldMember.IsStatic;
+                }
+            }
+            classContext = classContext.Parent;
+        }
+    }
 
     private string printTagToStr(AST node)
     {      

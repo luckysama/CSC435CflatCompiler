@@ -31,9 +31,9 @@ public class SymTabEntry {
     public CbType Type{ get; set; }              // declared type
 
     public string Name{ get; private set; }
-
+    public bool IsConst, IsStatic;
     public SymTabEntry( string nm, int ln ) {
-        Name = nm;  DeclLineNo = ln;
+        Name = nm; DeclLineNo = ln; IsConst = false; IsStatic = false;
     }
 }
 

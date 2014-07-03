@@ -221,7 +221,7 @@ public abstract class CbMember {
     public CbClass Owner { get; set; }  // class owning this field
     public bool IsStatic{ get; set; }   // static
     public virtual CbType Type{ get; set; }  // type of the const, field or method
-
+    public int LineNumber;
     public abstract void Print(TextWriter p);
 }
 
