@@ -484,6 +484,22 @@ public class TypeCheckVisitor2: Visitor {
     }
     
     private void checkTypeSyntax(AST n) {
+	if (n.Tag == NodeType.Array) {
+		checkTypeSyntax(n[0]);
+	} else {
+		CbType thisType = null;
+		List<NodeType> accept_T = new List<NodeType>{NodeType.IntType,NodeType.StringType,NodeType.CharType,NodeType.VoidType};
+		if (!(accept_T.Contains(n.Tag))) {
+			if (n.Tag == NodeType.Ident) {
+				AST_leaf identifier = n as AST_leaf;
+				thisType = ns.LookUp(identifier.Sval) as CbType;
+				if (thisType == null) 
+					Start.SemanticError(n.LineNumber,"unrecognized identifier {0}",identifier.Sval);
+			} else {
+				Start.SemanticError(n.LineNumber,"Unexpected type in AST, {0}",n.Tag.ToString());
+			}
+		}
+	}
         /* TODO
            code to check whether n is the subtree that has appropriate AST
            structure for a Cb type. It could be a builtin type (int, char,
@@ -516,7 +532,33 @@ public class TypeCheckVisitor2: Visitor {
     }
     
     private void checkOverride(AST_nonleaf node) {
-        string name = currentMethod.Name;
+	string name = currentMethod.Name;
+	NodeType child_indTag = node[node.NumChildren - 1].Tag;
+	bool hasAncestor = false;
+	CbClass checkAncestor = currentClass.Parent;
+	do {
+		if (checkAncestor == null) 
+			break;
+		if (checkAncestor.Members.ContainsKey(name)) {
+			CbMember anc_curr = checkAncestor.Members[name];
+			if (anc_curr is CbMethod) {
+				hasAncestor = true;
+				CbMethod anc_check = anc_curr as CbMethod;
+				if (currentMethod.ResultType != anc_check.ResultType) {
+					Start.SemanticError(node.LineNumber,"ancestor method with same name {0} but different signature",name);
+					break;
+				} else if (anc_check.IsStatic || currentMethod.IsStatic) {
+					Start.SemanticError(node.LineNumber,"ancestor or current method, {0}, set to static",name);
+					break;
+				} else if (child_indTag != NodeType.Override) {
+					Start.SemanticError(node.LineNumber,"ancestor found but current method not set to override");	
+				}
+			}
+		}
+		checkAncestor = checkAncestor.Parent;
+	} while (true);
+	if (!(hasAncestor) && (child_indTag == NodeType.Override))
+		Start.SemanticError(node.LineNumber,"no ancestor method found to be overrident");
         // search for a member in any ancestor with same name
         /* TODO
            code to check whether any ancestor class contains a member with
