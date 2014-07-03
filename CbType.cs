@@ -32,7 +32,7 @@ public abstract class CbType {
     static CbBasic bt = new CbBasic(CbBasicType.Bool);
     static CbBasic ct = new CbBasic(CbBasicType.Char);
     static CbClass ot = new CbClass("Object",null);
-    static CbClass st = new CbClass("String",null);
+    static CbClass st = new CbClass("String",ot);
     static CbBasic nt = new CbBasic(CbBasicType.Null);
     static CbBasic et = new CbBasic(CbBasicType.Error);
     static IDictionary<CbType,CFArray> arrayTypes = new Dictionary<CbType,CFArray>();
