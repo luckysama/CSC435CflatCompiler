@@ -3,10 +3,10 @@
 // (see accompanying GPPGcopyright.rtf)
 
 // GPPG version 1.5.0
-// Machine:  LUCKY-PC
-// DateTime: 02/07/2014 10:32:53 PM
-// UserName: Lucky
-// Input file <CbParser.y - 02/07/2014 10:27:08 PM>
+// Machine:  SUNTORY
+// DateTime: 28-Jun-14 11:17:17
+// UserName: nigelh
+// Input file <CbParser.y - 27-Jun-14 17:14:08>
 
 // options: lines gplex
 
@@ -767,7 +767,7 @@ public class Parser: ShiftReduceParser<AST, LexLocation>
         break;
       case 97: // AnInteger -> IntConst
 #line 285 "CbParser.y"
-{ int val = int.Parse(lexer.yytext); CurrentSemanticValue = AST.Leaf(NodeType.IntConst, LineNumber, val); }
+{ CurrentSemanticValue = AST.Leaf(NodeType.IntConst, LineNumber, Int32.Parse(lexer.yytext)); }
         break;
       case 98: // AChar -> CharConst
 #line 288 "CbParser.y"

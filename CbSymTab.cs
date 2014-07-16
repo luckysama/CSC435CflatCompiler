@@ -4,7 +4,7 @@
    in the body of a method.
    
    This does NOT continue searches amongst the fields of the class containing
-   the method if noi local declaration for a name is found. That must be
+   the method if no local declaration for a name is found. That must be
    handled by the caller.
 
     Author: Nigel Horspool
@@ -29,11 +29,12 @@ namespace FrontEnd {
 public class SymTabEntry {
     public int DeclLineNo { get; private set; }  // declared on this line
     public CbType Type{ get; set; }              // declared type
+    public string SSAName{ get; set; }          // NEW FOR ASS4. Latest name used for SSA
 
     public string Name{ get; private set; }
-    public bool IsConst, IsStatic;
+
     public SymTabEntry( string nm, int ln ) {
-        Name = nm; DeclLineNo = ln; IsConst = false; IsStatic = false;
+        Name = nm;  DeclLineNo = ln;
     }
 }
 
@@ -104,6 +105,46 @@ public class SymTab {
             if (syt == null) break; // hit the scope marker
         }
     }
+
+    // new for ASS4
+    public IEnumerator<SymTabEntry> GetEnumerator()
+    {
+        bool notFirst = false;
+        foreach (SymTabEntry e in table)
+        {
+            if (notFirst)
+                yield return e;
+            else  // skip initial null in table
+                notFirst = true;
+        }
+    }
+
+    // new for ASS4
+    public SymTab Clone()
+    {
+        SymTab result = new SymTab();
+        bool first = true;
+        foreach (SymTabEntry e in table)
+        {
+            if (first)
+            {   // skip initial null in the list
+                first = false;
+                continue;
+            }
+            if (e == null)
+            {
+                result.Enter();
+                continue;
+            } 
+            SymTabEntry ne = result.Binding(e.Name, e.DeclLineNo);
+            // copy over any additional fields
+            ne.Type = e.Type;
+            ne.SSAName = e.SSAName;
+        }
+        Debug.Assert(result.ScopeLevel == this.ScopeLevel);
+        return result;
+    }
+
 }
 
 } // end of namespace FrontEnd 

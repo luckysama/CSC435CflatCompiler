@@ -282,7 +282,7 @@ Qualifiers:     '.' Identifier Qualifiers
 Identifier:     Ident   { $$ = AST.Leaf(NodeType.Ident, LineNumber, lexer.yytext); }
         ;
 
-AnInteger:      IntConst    { int val = int.Parse(lexer.yytext); $$ = AST.Leaf(NodeType.IntConst, LineNumber, val); }
+AnInteger:      IntConst  { $$ = AST.Leaf(NodeType.IntConst, LineNumber, int.Parse(lexer.yytext)); }
         ;
 
 AChar:          CharConst   { $$ = AST.Leaf(NodeType.CharConst, LineNumber, lexer.yytext); }

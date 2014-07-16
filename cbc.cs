@@ -87,6 +87,7 @@ public class Start {
         bool printASTtc = false;
         bool printTokens = false;
         bool printNS = false;
+        string target = "x86_64-unknown-linux-gnu";  // default for CSC linux server
 
         foreach( string arg in args ) {
             if (arg.StartsWith("-")) {
@@ -100,6 +101,11 @@ public class Start {
                 case "-tc":
                     printASTtc = true;  break;
                 default:
+                    if (arg.StartsWith("-target="))
+                    {
+                        target = arg.Substring(8).Trim();
+                        break;
+                    }
                     Console.WriteLine("Unknown option {0}, ignored", arg);
                     break;
                 }
@@ -130,23 +136,21 @@ public class Start {
 
         CbType.Initialize();  // initialize some predefined types and top-level namespace
 
-        //Nigel's code: fill in top level names
         TLVisitor tlv = new TLVisitor();
         tree.Accept(tlv, NameSpace.TopLevelNames);
-      
-        //Assignment 3
-        //First pass: fill in member types (no look at method body
-        TypeFiller typeFiller = new TypeFiller(NameSpace.TopLevelNames);
-        tree.Accept(typeFiller, null);
-        //Final pass: using Nigel's example code and fill in stuff
-        TypeCheckVisitor2 type2 = new TypeCheckVisitor2();
-        tree.Accept(type2, null);
- 
-      
+        
+        TypeCheckVisitor1 tcv1 = new TypeCheckVisitor1();
+        tree.Accept(tcv1, null);
+
+        TypeCheckVisitor2 tcv2 = new TypeCheckVisitor2();
+        tree.Accept(tcv2, null);
+
+        // allow inspection of all the type annotations
         if (printASTtc) {
         	PrVisitor printVisitor = new PrVisitor();
-            tree.Accept(printVisitor, 0);    // print AST with the datatype annotations
+            tree.Accept(printVisitor,0);    // print AST with the datatype annotations
         }
+
 
         if (printNS)
             NameSpace.Print();
@@ -156,19 +160,25 @@ public class Start {
             return;
         }
 
-/*      // Tasks for Assignment 4
-
 		// generate intermediate representation (IR) code in LLVM's text formal
-		
-		... instantiate an IR generating visitor and invoke it here
+		string llfilename = filename.Substring(0,filename.Length-2)+"ll";
+		LLVM llvm = new LLVM(llfilename, target);
+
+        LLVMVisitor1 lv1 = new LLVMVisitor1(llvm);
+        tree.Accept(lv1, null);
+        
+        // second pass of LLVM IR code generation
+        LLVMVisitor2 lv2 = new LLVMVisitor2(llvm);
+        tree.Accept(lv2, null);
+        
+        // close tle llvm file
+        llvm.Dispose();
 		
 		// ideally no semantic errors are detected while creating IR code, but in case
-        if (semanticErrorCnt > 0) {
-            Console.WriteLine("\n{0} errors reported\n", semanticErrorCnt);
+        if (SemanticErrorCnt > 0) {
+            Console.WriteLine("\n{0} errors reported\n", SemanticErrorCnt);
             return;
         }
-
-*/
 
         // There could be warning messages from any previous stage
         if (WarningMsgCnt > 0) {

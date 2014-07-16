@@ -32,7 +32,7 @@ public abstract class CbType {
     static CbBasic bt = new CbBasic(CbBasicType.Bool);
     static CbBasic ct = new CbBasic(CbBasicType.Char);
     static CbClass ot = new CbClass("Object",null);
-    static CbClass st = new CbClass("String",ot);
+    static CbClass st = new CbClass("String",null);
     static CbBasic nt = new CbBasic(CbBasicType.Null);
     static CbBasic et = new CbBasic(CbBasicType.Error);
     static IDictionary<CbType,CFArray> arrayTypes = new Dictionary<CbType,CFArray>();
@@ -109,6 +109,7 @@ public class CbClass: CbType {
     public IDictionary<string, CbMember> Members{ get; set; }
     public string Name{ get; set; }     // name of this class
     public CbClass Parent{ get; set; }  // parent class
+    public int LastIndex{ get; set; }   // NEW FOR ASS4
 
     // if no parent class has been specified, use null
     public CbClass( string name, CbClass parent ) {
@@ -221,7 +222,7 @@ public abstract class CbMember {
     public CbClass Owner { get; set; }  // class owning this field
     public bool IsStatic{ get; set; }   // static
     public virtual CbType Type{ get; set; }  // type of the const, field or method
-    public int LineNumber;
+
     public abstract void Print(TextWriter p);
 }
 
@@ -236,6 +237,8 @@ public class CbConst: CbMember {
 }
 
 public class CbField: CbMember {
+    public int Index { get; set; }  // NEW FOR ASS4
+
     public CbField( string nm, CbType t ) {
         Name = nm;  Type = t;
         IsStatic = false; // Cb does not have static fields
@@ -252,14 +255,11 @@ public class CbMethod: CbMember {
     public override CbType Type{
         get { return new CbMethodType(this); }
         set { throw new Exception("internal error"); } }
+    public int VTableIndex { get; set; }   // NEW FOR ASS4
 
     public CbMethod( string nm, bool isStatic, CbType rt, IList<CbType> argType ) {
        Name = nm;  IsStatic = isStatic;
-        ResultType = rt; ArgType = argType;
-        if (ArgType == null)
-        {
-            ArgType = new List<CbType>();
-        }
+       ResultType = rt; ArgType = argType;
     }
 
     public override void Print(TextWriter p) {
