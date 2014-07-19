@@ -302,6 +302,7 @@ public class TypeCheckVisitor2: Visitor {
             node[1].Accept(this,data);
             if (!isIntegerType(node[1].Type))
                 Start.SemanticError(node[0].LineNumber, "array index should be an int");
+            node.Kind = CbKind.Variable;  // Bug fix, 15-July-14
             break;
         case NodeType.Add:
         case NodeType.Sub:

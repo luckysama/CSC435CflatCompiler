@@ -92,13 +92,13 @@ namespace FrontEnd
             string instanceType = GetTypeDescr(t);
             ll.WriteLine("  %{0} = getelementptr inbounds {1} null, i32 0, i32 {2}",
                 nextUnnamedIndex, instanceType, t.LastIndex);
-            ll.WriteLine("  %{0} = ptrtoint [0 x i32]* %{1} to i32",
-                nextUnnamedIndex+1, nextUnnamedIndex);
-            ll.WriteLine("  %{0} = call i8* @malloc(i32 %{1})",
-                nextUnnamedIndex+2, nextUnnamedIndex+1);
+            ll.WriteLine("  %{0} = ptrtoint [0 x i32]* %{1} to i{2}",
+                nextUnnamedIndex+1, nextUnnamedIndex, ptrSize);
+            ll.WriteLine("  %{0} = call i8* @malloc(i{2} %{1})",
+                nextUnnamedIndex+2, nextUnnamedIndex+1, ptrSize);
             // clear the allocated storage to 0
-            ll.WriteLine("  call void @llvm.memset.p0i8.i32(i8* %{0}, i8 0, i32 %{1}, i32 0, i1 0)",
-                nextUnnamedIndex+2, nextUnnamedIndex+1);
+            ll.WriteLine("  call void @llvm.memset.p0i8.i{2}(i8* %{0}, i8 0, i{2} %{1}, i32 0, i1 0)",
+                nextUnnamedIndex+2, nextUnnamedIndex+1, ptrSize);
             // convert from i8* to the proper class instance pointer type
             ll.WriteLine("  %{0} = bitcast i8* %{1} to {2}",
                 nextUnnamedIndex+3, nextUnnamedIndex+2, GetTypeDescr(t));
@@ -127,7 +127,7 @@ namespace FrontEnd
         // the result is the LLVM value which holds the result returned by m,
         // or null if m is void
         public LLVMValue CallVirtualMethod( CbMethod m, LLVMValue thisPtr, LLVMValue[] args ) {
-            if (args.Length != m.ArgType.Count)
+            if (args.Length != m.ArgType.Count || thisPtr == null)
                 throw new Exception("invalid call to CallVirtualMethod");
             CbClass c = m.Owner;
             LLVMValue result = null;

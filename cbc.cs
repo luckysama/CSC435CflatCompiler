@@ -5,6 +5,8 @@
     * lexes and parses the input
     * builds the AST
     * builds a symbol-table of top-level names: for namespaces and classes
+    * performs type and semantic checking
+    * generates LLVM code
 
     Author: Nigel Horspool
     

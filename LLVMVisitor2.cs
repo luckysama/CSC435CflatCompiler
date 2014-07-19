@@ -102,6 +102,7 @@ public class LLVMVisitor2: Visitor {
 	    LLVMValue savedValue;
         switch(node.Tag) {
         case NodeType.Program:
+            llvm.OutputArrayDefinitions();  // NEW!
             node[1].Accept(this, data);  // visit class declarations
             break;
         case NodeType.Class:
@@ -180,6 +181,7 @@ public class LLVMVisitor2: Visitor {
             // generate code for the condition test and branch
             node[0].Accept(this,data);
             llvm.WriteCondBranch(lastValueLocation, TL, FL);
+            lastValueLocation = null;  // Bug fix, line moved from below
             // make a copy of the SSA name information
             SymTab syCopy = sy.Clone();
             // generate code for the then clause
@@ -200,7 +202,6 @@ public class LLVMVisitor2: Visitor {
             llvm.WriteLabel(JL);
             lastBBLabel = JL;
             sy = llvm.Join(thenEnd, sySaved, elseEnd, sy);
-            lastValueLocation = null;
             break;
         case NodeType.While:
             /*  TODO
@@ -241,6 +242,7 @@ public class LLVMVisitor2: Visitor {
                 if (argt == CbType.Int || argt == CbType.Char)
                     savedValue = llvm.Dereference(savedValue);
                 llvm.CallBuiltInMethod(CbType.Void, name, savedValue);
+                lastValueLocation = null;  // ADDED
             } else
             if (m.Method == readLineMethod) {
                 lastValueLocation = llvm.CallBuiltInMethod(CbType.String, "@Console.ReadLine", null);
@@ -258,8 +260,15 @@ public class LLVMVisitor2: Visitor {
                 }
                 if (m.Method.IsStatic)
                     lastValueLocation = llvm.CallStaticMethod(m.Method, actuals);
-                else
+                else {
+                	if (savedValue == null) {
+                	    if (currentMethod.IsStatic)
+                	        Start.SemanticError(node.LineNumber,
+                	            "Cannot call virtual method without an object reference");
+                		savedValue = thisPointer;
+                	}
                     lastValueLocation = llvm.CallVirtualMethod(m.Method, savedValue, actuals);
+                }
             }
             break;
         case NodeType.Dot:
@@ -284,7 +293,7 @@ public class LLVMVisitor2: Visitor {
             if (node.Kind == CbKind.ClassName) {
                 // do nothing
             } else if (node[0].Type is CFArray && rhs == "Length") {
-                // TODO
+                lastValueLocation = llvm.ArrayLength(node.Type, lastValueLocation);  // ADDED
             } else if (node[0].Type == CbType.String && rhs == "Length") {
                 // TODO
             } else {
@@ -293,8 +302,8 @@ public class LLVMVisitor2: Visitor {
                 CbConst mem = lhstype.Members[rhs] as CbConst;
                 if (mem != null)
                     lastValueLocation = llvm.AccessClassConstant(mem);
-                else
-                    lastValueLocation = null;  // it was a method, do nothing
+                // else
+                //    lastValueLocation = null;  // it was a method, do nothing
             }
             break;
         case NodeType.Cast:
@@ -303,7 +312,8 @@ public class LLVMVisitor2: Visitor {
             break;
         case NodeType.NewArray:
             node[1].Accept(this,data);
-            // TODO
+            // TODO -- done!
+            lastValueLocation = llvm.WriteNewArray(node[0].Type, lastValueLocation);
             break;
         case NodeType.NewClass:
             lastValueLocation = llvm.NewClassInstance((CbClass)(node[0].Type));
@@ -326,7 +336,9 @@ public class LLVMVisitor2: Visitor {
             savedValue = lastValueLocation;
             node[1].Accept(this,data);
             lastValueLocation = llvm.ForceIntValue(lastValueLocation);
-            // TODO
+            // TODO  -- done!
+            lastValueLocation = llvm.ElementReference(node.Type,
+				savedValue, lastValueLocation);
             break;
         case NodeType.Add:
         case NodeType.Sub:
