@@ -396,9 +396,38 @@ public class LLVMVisitor2: Visitor {
             break;
         case NodeType.And:
         case NodeType.Or:
-            node[0].Accept(this,data);
-            savedValue = lastValueLocation;
-            node[1].Accept(this,data);
+            #region Assignment 4 checkpoint 3 - Conditional And Or
+            {
+                //save lhs start block
+                string LabelContext = lastBBLabel;
+                //lhs
+                node[0].Accept(this, data);
+                LLVMValue lhs = lastValueLocation;
+                if (lhs.IsReference)
+                    lhs = llvm.Dereference(lhs);
+                LLVMValue tobool1 = llvm.WriteCmpInst_LiteralConst("ne", lhs, 0);
+                string CondRhs = llvm.CreateBBLabel("CondRhs"); 
+                string CondEnd =llvm.CreateBBLabel("CondEnd"); 
+                
+                if (node.Tag == NodeType.And)
+                    llvm.WriteCondBranch(tobool1, CondRhs, CondEnd);
+                else
+                    llvm.WriteCondBranch(tobool1, CondEnd, CondRhs);
+               
+                //rhs
+                llvm.WriteLabel(CondRhs);
+                node[1].Accept(this, data);
+                LLVMValue rhsCond = lastValueLocation;
+                if (rhsCond.IsReference)
+                    rhsCond = llvm.Dereference(rhsCond);
+                LLVMValue tobool2 = llvm.WriteCmpInst_LiteralConst("ne", rhsCond, 0);
+                llvm.WriteBranch(CondEnd);
+
+                //end - phi bool1 and bool2 together
+                llvm.WriteLabel(CondEnd);
+                lastValueLocation = llvm.JoinTemporary(LabelContext, tobool1, CondRhs, tobool2);
+            }
+            #endregion
             // TODO
             break;
         default:
