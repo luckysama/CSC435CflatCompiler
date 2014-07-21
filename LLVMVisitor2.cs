@@ -43,6 +43,8 @@ public class LLVMVisitor2: Visitor {
     SymTab sy;  // holds formal parameters & local variables of a method
     IList<string> LoopLabels;  // needed to implement break/continue
 
+
+
     // constructor
     public LLVMVisitor2( LLVM llvm ) {
         ns = NameSpace.TopLevelNames;  // get the top-level namespace
@@ -63,6 +65,7 @@ public class LLVMVisitor2: Visitor {
         lastLocalVariable = null;
         thisPointer = null;
         lastBBLabel = null;
+
     }
 
 
@@ -320,16 +323,44 @@ public class LLVMVisitor2: Visitor {
             break;
         case NodeType.PlusPlus:
         case NodeType.MinusMinus:
-            node[0].Accept(this,data);
-            // TODO 
+            node[0].Accept(this, data);
+            #region Assignment 4 check point 2 - Plusplus and Minusminus
+            {
+                string Inst = "add";
+                if (node.Tag == NodeType.MinusMinus)
+                    Inst = "sub";
+                if (lastValueLocation.IsReference)
+                {
+                    LLVMValue operand = llvm.Dereference(lastValueLocation);
+                    LLVMValue result = llvm.WriteIntInst_LiteralConst(Inst, operand, 1);
+                    llvm.Store(result, lastValueLocation);
+                } else
+                {
+                    //Note that ++ and -- updates SSA if it's on a local variable
+                    SymTabEntry dest = lastLocalVariable;
+                    LLVMValue result = llvm.WriteIntInst_LiteralConst(Inst, lastValueLocation, 1);
+                    dest.SSAName = result.LLValue;
+                }
+            }
+            #endregion
             lastValueLocation = null;
             break;
         case NodeType.UnaryPlus:
             // a no-op
             break;
         case NodeType.UnaryMinus:
-            node[0].Accept(this,data);
-            // TODO
+            node[0].Accept(this, data);
+            #region Assignment 4 check point 1 - Unary Minus Operator
+            {
+                LLVMValue operand = lastValueLocation;
+                if (operand.IsReference)
+                {
+                    //Load the value from memory 
+                    operand = llvm.Dereference(lastValueLocation);
+                }
+                lastValueLocation = llvm.WriteIntInst_LiteralConst("sub", 0, operand);
+            }
+            #endregion
             break;
         case NodeType.Index:
             node[0].Accept(this,data);
