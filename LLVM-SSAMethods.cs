@@ -90,5 +90,27 @@ namespace FrontEnd
             }
             return result;
         }
+
+        #region Assignment 4 addition
+        public LLVMValue JoinTemporary(string pred1, LLVMValue version1, string pred2, LLVMValue version2)
+        {
+            Debug.Assert(version1.LLType == version2.LLType);
+            string newIdent = JoinTemporary(pred1, version1.LLValue, pred2, version2.LLValue, version1.LLType);
+            return new LLVMValue(newIdent, version1.LLType, false);
+        }
+        
+        public string JoinTemporary(string pred1, string identifier1, string pred2, string identifier2, string type)
+        {
+            string rv = nextTemporary();
+            ll.WriteLine(" {0} = phi {1} [{2}, {3}], [{4}, {5}]",
+                rv,
+                type,
+                identifier1,
+                pred1,
+                identifier2,
+                pred2);
+            return rv;
+        }
+        #endregion
     }
 }
