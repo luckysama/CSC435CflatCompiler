@@ -65,10 +65,8 @@ public class LLVMVisitor2: Visitor {
         lastLocalVariable = null;
         thisPointer = null;
         lastBBLabel = null;
-
     }
-
-
+    
 	public override void Visit(AST_kary node, object data) {
         switch(node.Tag) {
         case NodeType.ClassList:
@@ -207,10 +205,29 @@ public class LLVMVisitor2: Visitor {
             sy = llvm.Join(thenEnd, sySaved, elseEnd, sy);
             break;
         case NodeType.While:
-            /*  TODO
-            node[0].Accept(this,data);
-            node[1].Accept(this,data);
-            */
+            #region Assignment 4 checkpoint 4 - while loop
+            {
+                string WhileCondLabel = llvm.CreateBBLabel("WhileCond");
+                string WhileBodyLabel = llvm.CreateBBLabel("WhileBody");
+                string WhileEndLabel = llvm.CreateBBLabel("WhileEnd");
+
+                //The while condition
+                llvm.WriteLabel(WhileCondLabel);
+                SymTab syBeforeCondition = sy.Clone();
+                node[0].Accept(this, data);
+                llvm.WriteCondBranch(lastValueLocation, WhileBodyLabel, WhileEndLabel);
+
+                //The while body
+                llvm.WriteLabel(WhileBodyLabel);
+                node[1].Accept(this, data);
+                llvm.WriteBranch(WhileCondLabel);
+
+                //The while exit
+                llvm.WriteLabel(WhileEndLabel);
+
+            }
+            #endregion
+
             lastValueLocation = null;
             break;
         case NodeType.Return:
