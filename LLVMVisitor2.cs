@@ -213,17 +213,25 @@ public class LLVMVisitor2: Visitor {
 
                 //The while condition
                 llvm.WriteLabel(WhileCondLabel);
+                lastBBLabel = WhileCondLabel;
                 SymTab syBeforeCondition = sy.Clone();
                 node[0].Accept(this, data);
                 llvm.WriteCondBranch(lastValueLocation, WhileBodyLabel, WhileEndLabel);
 
                 //The while body
                 llvm.WriteLabel(WhileBodyLabel);
+                lastBBLabel = WhileBodyLabel;
                 node[1].Accept(this, data);
+                string endBody = lastBBLabel;
                 llvm.WriteBranch(WhileCondLabel);
 
                 //The while exit
                 llvm.WriteLabel(WhileEndLabel);
+                lastBBLabel =  WhileEndLabel;
+                SymTab syAfterCondition = sy;
+                sy = syBeforeCondition;
+                string endCond = lastBBLabel;
+                sy = llvm.Join(endBody, syAfterCondition, endCond, sy);
 
             }
             #endregion
