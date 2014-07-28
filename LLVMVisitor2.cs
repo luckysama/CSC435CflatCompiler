@@ -210,7 +210,7 @@ public class LLVMVisitor2: Visitor {
                 string WhileCondLabel = llvm.CreateBBLabel("WhileCond");
                 string WhileBodyLabel = llvm.CreateBBLabel("WhileBody");
                 string WhileEndLabel = llvm.CreateBBLabel("WhileEnd");
-
+                LoopLabels.Add(WhileEndLabel);
                 //The while condition
                 llvm.WriteLabel(WhileCondLabel);
                 lastBBLabel = WhileCondLabel;
@@ -231,6 +231,7 @@ public class LLVMVisitor2: Visitor {
                 SymTab syAfterCondition = sy;
                 sy = syBeforeCondition;
                 string endCond = lastBBLabel;
+                LoopLabels.RemoveAt(LoopLabels.Count - 1);
                 sy = llvm.Join(endBody, syAfterCondition, endCond, sy);
 
             }
@@ -500,7 +501,11 @@ public class LLVMVisitor2: Visitor {
             // to generate or anything else to do
             break;
         case NodeType.Break:
-            // TODO
+            if(LoopLabels.Count == 0) {
+                Start.SemanticError(node.LineNumber, "Cannot call virtual method without an object reference");
+            } else {
+                llvm.WriteBranch(LoopLabels[LoopLabels.Count - 1]);
+            }
             break;
         case NodeType.Null:
         case NodeType.Empty:
