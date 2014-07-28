@@ -131,7 +131,7 @@ namespace FrontEnd
                 case NodeType.Add: op = "add"; break;
                 case NodeType.Sub: op = "sub"; break;
                 case NodeType.Mul: op = "mul"; break;
-                case NodeType.Div: op = "div"; break;
+                case NodeType.Div: op = "sdiv"; break;
                 case NodeType.Mod: op = "srem"; break;
             }
             Debug.Assert(op != null);
