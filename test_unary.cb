@@ -1,0 +1,12 @@
+using System;
+
+class Foo {
+  public static int Main()
+  {
+	int k;
+	k = 97;
+	k = -k;
+	System.Console.Write(k);
+	return 0;
+  }
+ }
