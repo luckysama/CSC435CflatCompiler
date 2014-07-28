@@ -1,0 +1,22 @@
+using System;
+
+class Foo {
+  public static int Main()
+  {
+	int k;
+	k = 0;
+	int p;
+	p = 1;
+	if ( (p - 1) && (k + 1))
+	System.Console.WriteLine("1 : True");
+	else
+	System.Console.WriteLine("1 : False");
+	
+	if ( (k + 1) || (p - 1) )
+	System.Console.WriteLine("2 : True");
+	else
+	System.Console.WriteLine("2 : False");	
+	
+	return 0;
+  }
+ }
