@@ -502,7 +502,7 @@ public class LLVMVisitor2: Visitor {
             break;
         case NodeType.Break:
             if(LoopLabels.Count == 0) {
-                Start.SemanticError(node.LineNumber, "Cannot call virtual method without an object reference");
+                Start.SemanticError(node.LineNumber, "Stack is empty: not inside a loop");
             } else {
                 llvm.WriteBranch(LoopLabels[LoopLabels.Count - 1]);
             }
