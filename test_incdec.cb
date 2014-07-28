@@ -1,0 +1,18 @@
+using System;
+
+class Foo {
+  public static int Main()
+  {
+	int k;
+	k = 5;
+	k++;
+	System.Console.WriteLine(k);
+	
+	int p;
+	p = 5;
+	p--;
+	System.Console.WriteLine(p);
+	
+	return 0;
+  }
+ }
