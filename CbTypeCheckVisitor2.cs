@@ -126,7 +126,7 @@ public class TypeCheckVisitor2: Visitor {
         case NodeType.Assign:
             node[0].Accept(this,data);
             node[1].Accept(this,data);
-            if (node[0].Kind != CbKind.Variable)
+            if (node[0].Kind != CbKind.Variable && node[0].Type != CbType.Error)
                 Start.SemanticError(node.LineNumber, "target of assignment is not a variable");
             if (!isAssignmentCompatible(node[0].Type, node[1].Type))
                 Start.SemanticError(node.LineNumber, "invalid types in assignment statement");
@@ -145,6 +145,10 @@ public class TypeCheckVisitor2: Visitor {
             loopNesting++;
             node[1].Accept(this,data);
             loopNesting--;
+            break;
+        case NodeType.Break:
+            if (loopNesting == 0)
+                Start.SemanticError(node.LineNumber, "break statement is not used inside a loop");
             break;
         case NodeType.Return:
             if (node[0] == null) {
@@ -250,12 +254,24 @@ public class TypeCheckVisitor2: Visitor {
             node.Type = CbType.Error;
             break;
         case NodeType.Cast:
-            checkTypeSyntax(node[0]);
-            node[0].Accept(this,data);
-            node[1].Accept(this,data);
-            if (!isCastable(node[0].Type, node[1].Type))
-                Start.SemanticError(node[1].LineNumber, "invalid cast");
-            node.Type = node[0].Type;
+            if (typeSyntaxOK(node[0]))
+            {
+                node[0].Accept(this, data);
+                node[1].Accept(this, data);
+                if (!isCastable(node[0].Type, node[1].Type) ||
+                    (node[0].Tag == NodeType.Ident && node[0].Kind != CbKind.ClassName))
+                {
+                    Start.SemanticError(node[1].LineNumber, "invalid cast");
+                    node.Type = CbType.Error;
+                }
+                else
+                    node.Type = node[0].Type;
+            }
+            else
+            {
+                Start.SemanticError(node[1].LineNumber, "invalid syntax for cast");
+                node.Type = CbType.Error;
+            }
             break;
         case NodeType.NewArray:
             node[0].Accept(this,data);
@@ -365,6 +381,14 @@ public class TypeCheckVisitor2: Visitor {
                 Start.SemanticError(node[0].LineNumber,
                     "{0} operator does not accept these argument types", node.Tag);
             break;
+        case NodeType.Array:
+            // processing a local declaration of an array       
+	        // visit the child to get the element type
+	        node[0].Accept(this,data);
+	        // now create an array type from that element type
+	        CbType at = CbType.Array(node[0].Type);
+	        node.Type = at;
+            break;
         default:
             throw new Exception("Unexpected tag: "+node.Tag);  
         }
@@ -472,8 +496,25 @@ public class TypeCheckVisitor2: Visitor {
         }
         return false;
     }
-    
-    private void checkTypeSyntax(AST n) {
+
+    private bool typeSyntaxOK(AST n)
+    {
+        switch (n.Tag)
+        {
+            case NodeType.Dot:
+                // LHS must be namespace, RHS must be classname -- both identifiers
+                return (n[0].Tag == NodeType.Ident && n[1].Tag == NodeType.Ident);
+            case NodeType.Array:
+                return typeSyntaxOK(n[0]);
+            case NodeType.Ident:
+            case NodeType.IntType:
+            case NodeType.CharType:
+            case NodeType.StringType:
+                break;
+            default:
+                return false;
+        }
+        return true;
     }
 
     private bool isCastable(CbType dest, CbType src) {
@@ -541,7 +582,7 @@ public class TypeCheckVisitor2: Visitor {
             Start.SemanticError(node.LineNumber, "static methods cannot override or be overridden");
         } else
         if (node[4].Tag == NodeType.Virtual)
-            Start.SemanticError(node.LineNumber, "method {0} should have override attribute");
+            Start.SemanticError(node.LineNumber, "method {0} should have override attribute", name);
     }
 }
 
