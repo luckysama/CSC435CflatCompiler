@@ -24,9 +24,11 @@ namespace FrontEnd
         public bool IsReference { get; set; }
         public string LLType{ get; set; }
         public string LLValue{ get; set; }
-
+        public enum ValueSemanticType { LiteralVar, LLVMTemp, LiteralConst };
+        public ValueSemanticType LLSemanticType;
         public LLVMValue( string t, string v, bool isref ) {
             LLType = t; LLValue = v; IsReference = isref;
+            LLSemanticType = ValueSemanticType.LLVMTemp;
         }
 
         public override string ToString() { return LLType + " " + LLValue; }
@@ -192,6 +194,11 @@ namespace FrontEnd
             if (t is CFArray) return GetTypeDescr((CFArray)t);
             if (t is CbClass) return GetTypeDescr((CbClass)t);
             throw new Exception("invalid call to getTypeDescr");
+        }
+
+        public void WriteRaw(string s)
+        {
+            ll.Write(s);
         }
 
     }

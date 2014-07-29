@@ -29,7 +29,7 @@ namespace FrontEnd
             return prefix + "." + nextBBNumber++;
         }
 
-        private string nextTemporary() {
+        public string nextTemporary() {
             return "%" + nextUnnamedIndex++;
         }
 
@@ -205,6 +205,23 @@ namespace FrontEnd
             return new LLVMValue("i1", rv, false);
         }
 
+        public void WriteInitialize(LLVMValue lhs, string rhs_literalConst)
+        {
+            string alignspec;
+            string literalConstSpec;
+            if (lhs.LLType.StartsWith("i32"))
+            {
+                alignspec = ", align 4";
+                literalConstSpec = "i32";
+            } else
+            {
+                alignspec = ", align 1";
+                literalConstSpec = "i8";
+            }
+           
+                ll.WriteLine("  {0} = load {1} {2}{3}", lhs.LLValue, literalConstSpec, rhs_literalConst, alignspec);
+           
+       }
 
         #endregion
 

@@ -156,7 +156,8 @@ public class LLVMVisitor2: Visitor {
                 AST_leaf local = locals[i] as AST_leaf;
                 SymTabEntry en = sy.Binding(local.Sval, local.LineNumber);
                 en.Type = node[0].Type;
-                en.SSAName = "%" + local.Sval;
+                
+                en.SSAName = llvm.CreateSSAName(en.Name);
             }
             break;
         case NodeType.Assign:
@@ -167,11 +168,19 @@ public class LLVMVisitor2: Visitor {
             if (savedValue.IsReference)
                 llvm.Store(lastValueLocation, savedValue);
             else
-            {   // it was a local variable on the LHS
-                // we generate no code, just remember a new name for that LHS
-                lastValueLocation = llvm.Coerce(lastValueLocation, node[1].Type, node[0].Type);
-                savedDest.SSAName = lastValueLocation.LLValue;
-                lastLocalVariable = null;
+            {
+                //if (lastValueLocation.LLSemanticType == LLVMValue.ValueSemanticType.LiteralConst)
+                //{
+                //    llvm.WriteInitialize(savedValue, lastValueLocation.LLValue);
+                //}
+                //else
+                {
+                    // it was a local variable on the LHS
+                    // we generate no code, just remember a new name for that LHS
+                    lastValueLocation = llvm.Coerce(lastValueLocation, node[1].Type, node[0].Type);
+                    savedDest.SSAName = lastValueLocation.LLValue;
+                    lastLocalVariable = null;
+                }
             }
             lastValueLocation = null;
             break;
@@ -207,16 +216,24 @@ public class LLVMVisitor2: Visitor {
         case NodeType.While:
             #region Assignment 4 checkpoint 4 - while loop
             {
-                string WhileCondLabel = llvm.CreateBBLabel("WhileCond");
-                string WhileBodyLabel = llvm.CreateBBLabel("WhileBody");
-                string WhileEndLabel = llvm.CreateBBLabel("WhileEnd");
+                string WhileCondLabel = llvm.CreateBBLabel("whileCond");
+                string WhileBodyLabel = llvm.CreateBBLabel("whileBody");
+                string WhileEndLabel = llvm.CreateBBLabel("whileEnd");
                 LoopLabels.Add(WhileEndLabel);
-                //The while condition
-                llvm.WriteLabel(WhileCondLabel);
-                lastBBLabel = WhileCondLabel;
+
+                string labelBeforeWhile = lastBBLabel;
                 SymTab syBeforeCondition = sy.Clone();
+                llvm.WriteLabel(WhileCondLabel);
+
+                //first pass : no output
+                llvm.DivertOutput();
+                
+                //The while condition                
+                lastBBLabel = WhileCondLabel;
                 node[0].Accept(this, data);
                 llvm.WriteCondBranch(lastValueLocation, WhileBodyLabel, WhileEndLabel);
+                SymTab syAfterCondition = sy.Clone();
+                string labelAfterCondition = lastBBLabel;
 
                 //The while body
                 llvm.WriteLabel(WhileBodyLabel);
@@ -225,15 +242,27 @@ public class LLVMVisitor2: Visitor {
                 string endBody = lastBBLabel;
                 llvm.WriteBranch(WhileCondLabel);
 
-                //The while exit
-                llvm.WriteLabel(WhileEndLabel);
-                lastBBLabel =  WhileEndLabel;
-                SymTab syAfterCondition = sy;
-                sy = syBeforeCondition;
-                string endCond = lastBBLabel;
-                LoopLabels.RemoveAt(LoopLabels.Count - 1);
-                sy = llvm.Join(endBody, syAfterCondition, endCond, sy);
+                //second pass
+                string loopbody = llvm.UndivertOutput();
+                //join : after the loop body and before the condition
+                sy = llvm.Join(labelBeforeWhile, syBeforeCondition, lastBBLabel, sy);
+               
+                //replace generated names
+                foreach (LLVM.strpair pair in llvm.GeneratedNames)
+                {
+                    if (pair.b.StartsWith("%")) //don't replace constants!!!
+                    loopbody = loopbody.Replace(pair.b, pair.a);
+                }
+                //write out
+                llvm.WriteRaw(loopbody);
 
+                //The while exit
+                llvm.WriteLabel(WhileEndLabel);               
+               
+                //join: after cond and before cond
+                sy = llvm.Join(lastBBLabel, sy, labelAfterCondition, syAfterCondition);
+                lastBBLabel = WhileEndLabel;
+                LoopLabels.RemoveAt(LoopLabels.Count - 1);
             }
             #endregion
 
@@ -466,9 +495,11 @@ public class LLVMVisitor2: Visitor {
         case NodeType.IntConst:
         case NodeType.CharConst:
             lastValueLocation = llvm.GetIntVal(node);
+            lastValueLocation.LLSemanticType = LLVMValue.ValueSemanticType.LiteralConst;
             break;
         case NodeType.StringConst:
             lastValueLocation = llvm.WriteStringConstant(node);
+            lastValueLocation.LLSemanticType = LLVMValue.ValueSemanticType.LiteralConst;
             break;
         case NodeType.Ident:
             string name = node.Sval;
