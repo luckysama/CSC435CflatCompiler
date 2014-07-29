@@ -216,13 +216,14 @@ public class LLVMVisitor2: Visitor {
         case NodeType.While:
             #region Assignment 4 checkpoint 4 - while loop
             {
-                string WhileCondLabel = llvm.CreateBBLabel("whileCond");
-                string WhileBodyLabel = llvm.CreateBBLabel("whileBody");
-                string WhileEndLabel = llvm.CreateBBLabel("whileEnd");
+                string WhileCondLabel = llvm.CreateBBLabel("while.cond");
+                string WhileBodyLabel = llvm.CreateBBLabel("while.body");
+                string WhileEndLabel = llvm.CreateBBLabel("while.end");
                 LoopLabels.Add(WhileEndLabel);
 
                 string labelBeforeWhile = lastBBLabel;
                 SymTab syBeforeCondition = sy.Clone();
+                llvm.WriteBranch(WhileCondLabel);
                 llvm.WriteLabel(WhileCondLabel);
 
                 //first pass : no output
