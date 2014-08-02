@@ -5,11 +5,15 @@ class Foo {
   {
 	int k;
 	k = 0;
+	k ++; //comment this line to see the expected opcode error 
 	while (k < 10)
 	{
 	 System.Console.WriteLine(k);
 	 if (k > 6)
+	 {
 	 break;
+	 k++;
+	 }
 	 k++;	
 	}
 	
