@@ -40,7 +40,7 @@ public class SymTabEntry {
 
 
 public class SymTab {
-    private IList<SymTabEntry> table;  // a simple list data stucture
+    public IList<SymTabEntry> table;  // a simple list data stucture
     
     public int ScopeLevel { get; private set; }
 

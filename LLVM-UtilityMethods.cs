@@ -22,6 +22,7 @@ namespace FrontEnd
     {
         int nextBBNumber = 0;       // used to number basic blocks
         int nextUnnamedIndex = -1;  // used to generate %0, %1, %2 ... sequences
+        bool basicblockend = false; //lucky: prevent any output until a new label
 
         // generates a unique name for a basic block label
         public string CreateBBLabel(string prefix="label")
@@ -37,6 +38,11 @@ namespace FrontEnd
         // into a LLVM temporary
         public LLVMValue Dereference(LLVMValue src)
         {
+            if (basicblockend == true)
+            {
+                Start.WarningMessage(-1, "Basic block ended, instruction omitted.(dereference).");
+                return src;
+            }
             if (!src.IsReference) return src;
             string rv = nextTemporary();
             ll.WriteLine("  {0} = load {1}* {2}", rv, src.LLType, src.LLValue);
@@ -46,6 +52,12 @@ namespace FrontEnd
         // Convert the operand into an i32 LLVM value in a temporary
         public LLVMValue ForceIntValue(LLVMValue src)
         {
+            if (basicblockend == true)
+            {
+                Start.WarningMessage(-1, "Basic block ended, instruction omitted.(forceintvalue).");
+                return src;
+            }
+            
             string rv;
             src = Dereference(src);
             if (src.LLType == "i32")
@@ -61,6 +73,12 @@ namespace FrontEnd
 
         // Generates a memory reference to a field of a class instance
         public LLVMValue RefClassField( LLVMValue instancePtr, CbField field ) {
+            if (basicblockend == true)
+            {
+                Start.WarningMessage(-1, "Basic block ended, instruction omitted.(RefClassfield).");
+                return instancePtr;
+            }
+
             string rv = nextTemporary();
             ll.WriteLine("  {0} = getelementptr inbounds {1}, i32 0, i32 {2}",
                 rv, instancePtr, field.Index);
@@ -69,6 +87,12 @@ namespace FrontEnd
 
         // stores a LLVM temporary into memory
        public void Store( LLVMValue source, LLVMValue dest ) {
+           if (basicblockend == true)
+           {
+               Start.WarningMessage(-1, "Basic block ended, instruction omitted.(store).");
+               return;
+           }
+
             if (!dest.IsReference)
                 throw new Exception("LLVM.Store needs a memory reference for the dest");
             source = Dereference(source);
@@ -84,6 +108,12 @@ namespace FrontEnd
 
         public void WriteReturnInst(LLVMValue result)
         {
+            if (basicblockend == true)
+            {
+                Start.WarningMessage(-1, "Basic block ended, instruction omitted.(return).");
+                return;
+            }
+
             if (result == null)
                 ll.WriteLine("  ret void");
             else
@@ -93,26 +123,45 @@ namespace FrontEnd
         // outputs a label
         public void WriteLabel(string name)
         {
+            basicblockend = false; //the start of another block
             ll.WriteLine(name + ":");
         }
 
         // outputs an unconditional branch
        public void WriteBranch(string lab)
         {
-            ll.WriteLine("  br label %{0}", lab);
+            if (basicblockend == true)
+            {
+                Start.WarningMessage(-1, "Basic block ended, instruction omitted.(unconditional jump).");
+                return;
+            } 
+           ll.WriteLine("  br label %{0}", lab);
+            basicblockend = true;
         }
 
         // outputs a conditional branch
         public void WriteCondBranch(LLVMValue cond, string trueDest, string falseDest)
         {
+            if (basicblockend == true)
+            {
+                Start.WarningMessage(-1, "Basic block ended, instruction omitted.(conditional jump).");
+                return;
+            }
             Debug.Assert(cond.LLType == "i1");
             ll.WriteLine("  br i1 {0}, label %{1}, label %{2}",
                 cond.LLValue, trueDest, falseDest);
+            basicblockend = true;
         }
 
         // Outputs an LLVM instruction which has two int operands and produces int result
         public LLVMValue WriteIntInst(string opcode, LLVMValue lhs, LLVMValue rhs)
         {
+            if (basicblockend == true)
+            {
+                Start.WarningMessage(-1, "Basic block ended, instruction omitted.(IntInst).");
+                return lhs;
+            }
+            
             lhs = ForceIntValue(lhs);
             rhs = ForceIntValue(rhs);
             string rv = nextTemporary();
@@ -141,6 +190,12 @@ namespace FrontEnd
        // compare two int or char values -- comparing two different kinds of pointer is unsupported
         public LLVMValue WriteCompInst(string cmp, LLVMValue lhs, LLVMValue rhs)
         {
+
+            if (basicblockend == true)
+            {
+                Start.WarningMessage(-1, "Basic block ended, instruction omitted.(cmpinst).");
+                return lhs;
+            }
             string rv;
             lhs = Dereference(lhs);
             rhs = Dereference(rhs);
@@ -180,6 +235,11 @@ namespace FrontEnd
         #region Assignment 4 Utility Methods
         public LLVMValue WriteIntInst_LiteralConst(string opcode, LLVMValue lhs, int rhs)
         {
+            if (basicblockend == true)
+            {
+                Start.WarningMessage(-1, "Basic block ended, instruction omitted.(writeIntInst_literal).");
+                return lhs;
+            }
             lhs = ForceIntValue(lhs);
             string rv = nextTemporary();
             string IntLiteral = rhs.ToString();
@@ -189,6 +249,11 @@ namespace FrontEnd
 
         public LLVMValue WriteIntInst_LiteralConst(string opcode, int lhs, LLVMValue rhs)
         {
+            if (basicblockend == true)
+            {
+                Start.WarningMessage(-1, "Basic block ended, instruction omitted.(writeIntInst_literal).");
+                return rhs;
+            }
             rhs = ForceIntValue(rhs);
             string rv = nextTemporary();
             string IntLiteral = lhs.ToString();
@@ -198,6 +263,11 @@ namespace FrontEnd
 
         public LLVMValue WriteCmpInst_LiteralConst(string opcode, LLVMValue lhs, int rhs)
         {
+            if (basicblockend == true)
+            {
+                Start.WarningMessage(-1, "Basic block ended, instruction omitted.(writeCmpInst_literal).");
+                return lhs;
+            }
             string rv = nextTemporary();
             string IntLiteral = rhs.ToString();
             ll.WriteLine("  {0} = icmp {1} i{4} {2}, {3}", rv, opcode,

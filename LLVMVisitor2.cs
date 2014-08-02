@@ -252,8 +252,20 @@ public class LLVMVisitor2: Visitor {
                 foreach (LLVM.strpair pair in llvm.GeneratedNames)
                 {
                     if (pair.b.StartsWith("%")) //don't replace constants!!!
-                    loopbody = loopbody.Replace(pair.b, pair.a);
+                    {                        
+                        loopbody = loopbody.Replace(pair.b, pair.a);
+                        //also replace symbols in syAfterCondition
+                        foreach (SymTabEntry entry in syAfterCondition.table)
+                        {
+                            if ((entry != null) && (entry.SSAName == pair.b))
+                            {
+                                entry.SSAName = pair.a;
+                            }
+                        }
+                    }
                 }
+
+                
                 //write out
                 llvm.WriteRaw(loopbody);
 
