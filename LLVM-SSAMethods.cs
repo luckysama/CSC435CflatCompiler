@@ -106,7 +106,7 @@ namespace FrontEnd
         public string JoinTemporary(string pred1, string identifier1, string pred2, string identifier2, string type)
         {
             string rv = nextTemporary();
-            ll.WriteLine(" {0} = phi {1} [{2}, {3}], [{4}, {5}]",
+            ll.WriteLine(" {0} = phi {1} [{2}, %{3}], [{4}, %{5}]",
                 rv,
                 type,
                 identifier1,
