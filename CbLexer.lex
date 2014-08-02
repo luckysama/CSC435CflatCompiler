@@ -28,7 +28,7 @@ opChar      [\-+<>*/%:=;,.\[\]{}()]
     public override void yyerror( string errmsg, params object[] args ) {
         System.Console.Write("{0}: ", yyline);
         if (errmsg.Contains("'{'"))
-            errmsg = errmsg.Replace("'{"', "'{{'");
+            errmsg = errmsg.Replace("'{'", "'{{'");
         if (errmsg.Contains("}"))
             errmsg = errmsg.Replace("'}'", "'}}'");
         System.Console.WriteLine(errmsg, args);
